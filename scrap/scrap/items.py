@@ -8,12 +8,9 @@
 import scrapy
 
 
-class ScrapItem(scrapy.Item):
-    # define the fields for your item here like:
-    # name = scrapy.Field()
-    pass
-
 class Member(scrapy.Item):
+    def get_collection_name(self): return "members"
+
     _id = scrapy.Field()
     nom = scrapy.Field()
     prenom = scrapy.Field()
@@ -31,3 +28,70 @@ class Member(scrapy.Item):
     lieu_de_naissance = scrapy.Field()
     profession = scrapy.Field()
     numero_allocataire = scrapy.Field()
+    structure = scrapy.Field()
+    fonction = scrapy.Field()
+
+class Structure(scrapy.Item):
+    def get_collection_name(self): return "structures"
+
+    _id = scrapy.Field()
+    name = scrapy.Field()
+    parent = scrapy.Field()
+    headcount = scrapy.Field()
+
+
+class Inscription(scrapy.Item):
+    def get_collection_name(self): return "inscriptions"
+
+    member_id = scrapy.Field()
+    ends = scrapy.Field()
+    inscription_type = scrapy.Field()
+
+
+class Formation(scrapy.Item):
+    """
+    db.formations.ensureIndex({member_id: 1, name: 1, date: 1}, {unique:true})
+
+    """
+    def get_collection_name(self): return "formations"
+
+    member_id = scrapy.Field()
+    name = scrapy.Field()
+    role = scrapy.Field()
+    date = scrapy.Field()
+    place = scrapy.Field()
+
+
+class Diplome(scrapy.Item):
+    """
+    db.diplomes.ensureIndex({member_id: 1, name: 1, date: 1}, {unique:true})
+
+    """
+    def get_collection_name(self): return "diplomes"
+
+    member_id = scrapy.Field()
+    name = scrapy.Field()
+    date = scrapy.Field()
+
+
+class Qualification(scrapy.Item):
+    """
+    db.qualifications.ensureIndex({member_id: 1, name: 1, obtained: 1}, {unique:true})
+
+    """
+
+    def get_collection_name(self): return "qualifications"
+
+    member_id = scrapy.Field()
+    name = scrapy.Field()
+    titular = scrapy.Field()
+    obtained = scrapy.Field()
+    expires = scrapy.Field()
+
+
+class Fonction(scrapy.Item):
+    def get_collection_name(self): return "fonctions"
+
+    _id = scrapy.Field()
+    name = scrapy.Field()
+    category = scrapy.Field()

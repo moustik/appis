@@ -37,10 +37,11 @@ class MongoPipeline(object):
 
     def process_item(self, item, spider):
         try:
-            self.db[self.collection_name].insert(dict(item))
+            self.db[item.get_collection_name()].insert(dict(item))
         except pymongo.errors.DuplicateKeyError:
-            self.db[self.collection_name].update_one(
-                { "_id": item["_id"]},
-                { "$set": dict(item) }
-            )
+            if "_id" in dict(item).keys():
+                self.db[item.get_collection_name()].update(
+                    { "_id": item["_id"]},
+                    { "$set": dict(item) }
+                )
         return item

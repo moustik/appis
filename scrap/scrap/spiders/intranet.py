@@ -4,6 +4,7 @@ import scrapy
 from scrapy.crawler import CrawlerProcess
 from scrapy.selector import HtmlXPathSelector
 
+from scrap.items import *
 
 INTRANET_URL = "https://intranet.sgdf.fr"
 MEMBER_URL = "https://intranet.sgdf.fr/Specialisation/Sgdf/adherents/RechercherAdherent.aspx"
@@ -13,6 +14,9 @@ EXTRACT_URL = "https://intranet.sgdf.fr/Specialisation/Sgdf/Adherents/ExtraireAd
 def clean_field_name(field_name):
     return unicodedata.normalize('NFKD', field_name.strip().lower()).encode('ascii', 'ignore').replace(" ", "_")
 
+
+def value(selector):
+    return selector.xpath('text()')[0].extract() if len(selector.xpath('text()')) else None
 
 class SGDFIntranetSpider(scrapy.Spider):
     name = "intranet"
@@ -63,19 +67,74 @@ class SGDFIntranetSpider(scrapy.Spider):
 
 
     def parse_member_list(self, response):
+# tests
+#        return scrapy.Request(MEMBER_URL + "?code=152606745",
+#                              callback=self.parse_member)
+#
+#    def blah(self, response):
         hxs = scrapy.selector.HtmlXPathSelector(text=response.body)
-        from scrapy.shell import inspect_response
-        inspect_response(response, self)
+#        from scrapy.shell import inspect_response
+#        inspect_response(response, self)
 
-        for member_id in hxs.xpath('/html/body/table/tr/td[2]/text()').extract():
+#            [
+# 0              u'IndividuCivilite.NomCourt', u'Individu.CodeAdherent', u'Individu.Nom', u'Individu.Prenom',
+# 4              u'Structure.CodeStructure', u'Structure.Nom',
+# 6              u'Fonction.Code', u'Fonction.CategorieMembre', u'Fonction.NomMasculin', u'Fonction.NomFeminin',
+# 10                 u'Inscription.Delegations',
+# 11             u'Individu.NomJeuneFille', u'Individu.Adresse.Ligne1', u'Individu.Adresse.Ligne2', u'Individu.Adresse.Ligne3',
+# 15             u'Individu.Adresse.CodePostal', u'Individu.Adresse.Municipalite', u'Individu.Adresse.Pays',
+# 18             u'Individu.TelephoneDomicile', u'Individu.TelephonePortable1', u'Individu.TelephonePortable2',
+# 21             u'Individu.TelephoneBureau', u'Individu.Fax',
+# 23             u'Individu.CourrielPersonnel', u'Individu.CourrielProfessionnel',
+# 25             u'Individu.DateNaissance', u'Individu.LieuNaissance', u'IndividuPaysNaissance.PaysLib',
+# 28             u'Individu.Profession', u'Individu.NumeroAllocataire',
+# 30             u'Individu.RegimeCAF', u'Individu.RegimeMSA', u'Individu.RegimeMaritime', u'Individu.RegimeAutre',
+# 34                 u'Individu.RegimeAllocataire',
+# 35             u'Individu.AutorisationInterventionChirurgicale', u'Individu.DroitImage',
+# 37                 u'Individu.AssuranceResponsabiliteCivile',
+# 38             u'Individu.AutoriseMailInfoMouvement', u'Individu.AutoriseMailInfoExterne',
+# 40             u'Inscriptions.DateDebut', u'Inscriptions.DateFin', u'Inscriptions.Type']
+
+        for member_selector in hxs.xpath('/html/body/table/tr')[1:]:
+            member_id_hxs = member_selector.xpath('td')[1].xpath('text()')
+            if len(member_id_hxs):
+                member_id = member_id_hxs[0].extract()
+            else:
+                self.logger.warning("no member ID")
+                continue
             self.logger.warning("extracting %s" % member_id)
-            yield [
-                scrapy.Request(MEMBER_URL + "?code=" + member_id,
-                               callback=self.parse_member),
-            ]
 
-#        yield scrapy.Request(MEMBER_URL + "?code=152606745",
-#                                  callback=self.parse_member)
+            #for i in [1]:
+            #    yield scrapy.Request(MEMBER_URL + "?code=%s" % member_id,
+            #                         callback=self.parse_member)
+
+            structure = Structure(
+                _id=int(value(member_selector.xpath('td')[4])),
+                name=value(member_selector.xpath('td')[5]),
+            )
+            for i in [1]:
+                yield structure
+
+            member = Member(_id=int(member_id),
+                            structure=structure["_id"],
+                            fonction=value(member_selector.xpath('td')[6]),
+            )
+            for i in [1]:
+                yield member
+
+            inscription = Inscription(member_id=int(member_id),
+                                      ends=value(member_selector.xpath('td')[41]),
+                                      inscription_type=int(value(member_selector.xpath('td')[42])),
+            )
+            for i in [1]:
+                yield inscription
+
+            fonction = Fonction(_id=value(member_selector.xpath('td')[6]),
+                                name=value(member_selector.xpath('td')[8]),
+                                category=value(member_selector.xpath('td')[7]),
+            )
+            for i in [1]:
+                yield fonction
 
 
     def parse_member(self, response):
@@ -94,7 +153,21 @@ class SGDFIntranetSpider(scrapy.Spider):
 #            self.logger.warning((clean_field_name(label), field))
             item[clean_field_name(label)] = field[0] if len(field) else None
 
-        return item
+        for row_selector in response.xpath('//*[@id="ctl00_ctl00_MainContent_DivsContent__formations__gvDiplomes__gvDiplomes"]/tr')[1:]:
+            diplome = Diplome(member_id=_id)
+            diplome["name"] = value(row_selector.xpath('td')[0])
+            diplome["date"] = value(row_selector.xpath('td')[2])
+            yield diplome
+
+        for row_selector in response.xpath('//*[@id="ctl00_ctl00_MainContent_DivsContent__qualifications__gvQualifications__gvQualifications"]/tr')[1:]:
+            qualification = Qualification(member_id=_id)
+            qualification["name"] = value(row_selector.xpath('td')[0]).strip()
+            qualification["titular"] = value(row_selector.xpath('td')[1])
+            qualification["obtained"] = value(row_selector.xpath('td')[2])
+            qualification["expires"] = value(row_selector.xpath('td')[3])
+            yield qualification
+
+        yield item
 
 
 
