@@ -1,0 +1,38 @@
+nom, prenom,
+{%- for formation in formations_list -%}
+{{ formation|lower }},
+{%- endfor -%}
+{%- for qualification in qualifications_list -%}
+{{ qualification.split()[0]|lower }},
+{%- endfor -%}
+{%- for diplome in diplomes_list -%}
+{{ diplome|lower }},
+{%- endfor %}
+
+{% for member in members -%}
+{{ member.nom }},{{ member.prenom }},
+{%- for formation in formations_list -%}
+{%- if formation in formations[member._id]|map(attribute='name') -%}
+ {{ formation|lower }}
+{%- endif -%}
+,
+{%- endfor -%}
+
+{%- for qualification in qualifications_list -%}
+{%- if qualification in qualifications[member._id]|map(attribute='name') -%}
+ {{ qualification.split()[0]|lower }}
+{%- endif -%}
+,
+{%- endfor -%}
+
+{%- for diplome in diplomes_list -%}
+{%- if diplome in diplomes[member._id]|map(attribute='name') -%}
+ {{ diplome|lower }}
+{%- endif -%}
+,
+{%- endfor -%}
+
+{%- if member._id in inscriptions and inscriptions[member._id].inscription_type == 2 -%}
+ {{inscriptions[member._id].inscription_type}},
+{%- endif %}
+{% endfor -%}

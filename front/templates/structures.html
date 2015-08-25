@@ -1,0 +1,26 @@
+{% extends "index.html" %}
+{% block content %}
+
+{% for structure in structures %}
+  {% if "00" in structure._id|string() %}
+  </div>
+  <div class="list-group">
+    <a class="list-group-item active" href='/structure/{{structure._id}}'>{{ structure.name }}</a>
+  {% else %}
+    {% if ((structure._id // 10) % 10) == 1 %}
+<!--
+    <a class="list-group-item" href='/structure/{{structure._id}}' style="background-color: #FFE3AD">{{ structure.name }}</a>
+-->
+    <a class="list-group-item list-group-item-warning" href='/structure/{{structure._id}}'>{{ structure.name }}</a>
+    {% elif ((structure._id // 10) % 10) == 2 %}
+    <a class="list-group-item list-group-item-info" href='/structure/{{structure._id}}'>{{ structure.name }}</a>
+    {% elif ((structure._id // 10) % 10) == 3 %}
+    <a class="list-group-item list-group-item-danger" href='/structure/{{structure._id}}'>{{ structure.name }}</a>
+    {% elif ((structure._id // 10) % 10) == 4 %}
+    <a class="list-group-item list-group-item-success" href='/structure/{{structure._id}}'>{{ structure.name }}</a>
+    {% else %}
+    <a class="list-group-item" href='/structure/{{structure._id}}'>{{ structure.name }}</a>
+    {% endif %}
+  {% endif %}
+{% endfor %}
+{% endblock %}

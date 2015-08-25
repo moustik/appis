@@ -1,0 +1,62 @@
+{% extends "index.html" %}
+{% block content %}
+<div class="panel panel-default">
+<div class="panel-heading">
+{% if member %}
+  <h1>{{ member.nom }} {{ member.prenom }}
+  {% if inscription and inscription.inscription_type == 2 %}
+  <span class="badge">pre-inscrit</span>
+  {% endif %}
+  </h1>
+{% else %}
+  <h1>NAA DA !</h1>
+{% endif %}
+</div>
+
+<div class="panel-body">
+
+<dl class="dl-horizontal">
+  <dt>Structure</dt>
+  <dd><a href='/structure/{{structure._id}}'>{{ structure.name }}</a></dd>
+  <dt>Fonction</dt><dd>{{ fonction.name }}</dd>
+</dl>
+
+{% if qualifications.count() %}
+<ul class="list-group">
+  <li class="list-group-item list-group-item-danger"> Qualifications </li>
+  {% for qualification in qualifications %}
+      <li class="list-group-item">
+        {{ qualification.name }}
+        {% if "/" in qualification.expires %}
+        <span class="badge">expire {{ qualification.expires }}</span>
+        {% endif %}
+      </li>
+  {% endfor %}
+</ul>
+{% endif %}
+
+{% if diplomes.count() %}
+<ul class="list-group">
+  <li class="list-group-item list-group-item-info"> Diplomes </li>
+  {% for diplome in diplomes %}
+      <li class="list-group-item"> {{ diplome.name }} </li>
+  {% endfor %}
+</ul>
+{% endif %}
+
+{% if formations.count() %}
+<ul class="list-group">
+  <li class="list-group-item list-group-item-warning"> Formations </li>
+  {% for formation in formations %}
+    <li class="list-group-item">
+      <span class="badge">{{ formation.role }}</span>
+      {{ formation.name }}
+    </li>
+  {% endfor %}
+</ul>
+{% endif %}
+
+</div>
+</div>
+<p>{{ member|pprint() }}</p>
+{% endblock %}

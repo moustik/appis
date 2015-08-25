@@ -1,0 +1,41 @@
+{% extends "listing.html" %}
+{% block member_block %}
+<dt>
+  <a href='/member/{{member._id}}'>{{ member.nom }} {{ member.prenom }}</a>
+</dt>
+<dd>
+  {% for formation in formations[member._id] %}
+      <big><span class='btn btn-warning btn-xs' style='display: inline-block'> {{ formation.name|lower }} </span></big>
+  {% endfor %}
+
+  {% for qualification in qualifications[member._id] %}
+      <big><span class='btn btn-danger btn-xs' style='display: inline-block'>
+          {{ qualification.name.split()[0]|lower }}
+          {% if qualification.titular == "Oui" %}
+            <span class="badge">T</span>
+          {% endif %}
+      </span></big>
+  {% endfor %}
+
+  {% for diplome in diplomes[member._id] %}
+      <big><span class='btn btn-primary btn-xs' style='display: inline-block'>
+          {% if "Buchettes" in diplome.name %}
+            <span class="glyphicon glyphicon-bitcoin"></span>
+            <span class="glyphicon glyphicon-bitcoin"></span>
+            {% if "3" in diplome.name %}
+            <span class="glyphicon glyphicon-bitcoin"></span>
+            {% elif "4" in diplome.name %}
+            <span class="glyphicon glyphicon-bitcoin"></span>
+            <span class="glyphicon glyphicon-bitcoin"></span>
+            {% endif %}
+          {% else %}
+            {{ diplome.name }}
+          {% endif %}
+      </span></big>
+  {% endfor %}
+
+      {% if member._id in inscriptions and inscriptions[member._id].inscription_type == 2 %}
+      <span class="badge">pre-inscrit</span>
+      {% endif %}
+</dd>
+{% endblock %}

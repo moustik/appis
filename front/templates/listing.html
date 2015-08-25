@@ -1,0 +1,41 @@
+{% extends "index.html" %}
+{% block content %}
+<div class="panel panel-success pull-right">
+  <div class="panel-heading">Legende</div>
+  <div class="panel-body">
+    <ul class="list-group">
+      <li class="list-group-item">
+        <span class='btn btn-warning btn-xs'>xxx</span>
+        <span class='pull-right'>Formation</span>
+      </li>
+      <li class="list-group-item">
+        <span class='btn btn-danger btn-xs'>xxx</span>
+        <span class='pull-right'>Qualification</span>
+      </li>
+      <li class="list-group-item">
+        <span class='btn btn-danger btn-xs'>xxx <span class="badge">T</span></span>
+        <span class="glyphicon glyphicon-btc"></span>
+        <span class='pull-right'>titulaire Qualification</span>
+      </li>
+      <li class="list-group-item">
+        <span class='btn btn-primary btn-xs'>xxx</span>
+        <span class='pull-right'>Diplome</span>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<h1>{{title}}</h1>
+
+<div class="pull-left">
+  {% if members.count() != 0 %}
+  <dl class="dl-horizontal">
+    {% for member in members %}
+      {% block member_block scoped %}{% endblock %}
+    {% endfor %}
+  </dl>
+  {% else %}
+  <a href="/">index</a>
+  {% endif %}
+</div>
+{% endblock %}
