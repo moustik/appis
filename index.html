@@ -3,8 +3,8 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<title>utils</title>
-<!-- 2015-04-09 Thu 17:54 -->
+<title>APPIS</title>
+<!-- 2015-08-27 Thu 14:58 -->
 <meta  http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta  name="generator" content="Org-mode" />
 <meta  name="author" content="moustik" />
@@ -135,1097 +135,332 @@ for the JavaScript code in this tag.
 </head>
 <body>
 <div id="content">
-<h1 class="title">utils</h1>
+<h1 class="title">APPIS</h1>
 <div id="table-of-contents">
 <h2>Table of Contents</h2>
 <div id="text-table-of-contents">
 <ul>
-<li><a href="#sec-1">Setup</a>
+<li><a href="#sec-1">Arsenal Pratique Profitant de l'Intranet S.G.d.F.</a>
 <ul>
-<li><a href="#sec-1-1">python evaluation</a></li>
-<li><a href="#sec-1-2">python requirement</a></li>
-<li><a href="#sec-1-3">export</a></li>
+<li><a href="#sec-1-1">Client Web</a>
+<ul>
+<li><a href="#sec-1-1-1">usage</a></li>
+<li><a href="#sec-1-1-2">dev</a></li>
 </ul>
 </li>
-<li><a href="#sec-2">intranet</a>
+<li><a href="#sec-1-2">Scraping automatisé</a>
 <ul>
-<li><a href="#sec-2-1">Import et definition</a></li>
-<li><a href="#sec-2-2">Initialise la session intranet.</a></li>
-<li><a href="#sec-2-3">VIEWSTAT</a></li>
-<li><a href="#sec-2-4">Extraction des données des chefs</a></li>
-<li><a href="#sec-2-5">Extraction des effectifs de groupe</a></li>
-<li><a href="#sec-2-6">Les formations des chefs</a>
-<ul>
-<li><a href="#sec-2-6-1">Qualification Scoutisme Français</a></li>
-<li><a href="#sec-2-6-2">Les diplomes</a></li>
-<li><a href="#sec-2-6-3">Les formations SGDF</a></li>
-<li><a href="#sec-2-6-4">Un peu de violence</a></li>
+<li><a href="#sec-1-2-1">scrapy</a></li>
+<li><a href="#sec-1-2-2">mongoDB</a></li>
+<li><a href="#sec-1-2-3">run it</a></li>
+<li><a href="#sec-1-2-4">code</a></li>
 </ul>
 </li>
-<li><a href="#sec-2-7">Fusion de données</a></li>
-<li><a href="#sec-2-8">unités</a></li>
-<li><a href="#sec-2-9">Affichage par unité</a></li>
-<li><a href="#sec-2-10">Affichage par Pack</a></li>
-<li><a href="#sec-2-11">script de mise à jour</a></li>
 </ul>
 </li>
 </ul>
 </div>
 </div>
 <div id="outline-container-sec-1" class="outline-2">
-<h2 id="sec-1"><span class="section-number-2">1</span> Setup</h2>
+<h2 id="sec-1"><span class="section-number-2">1</span> Arsenal Pratique Profitant de l'Intranet S.G.d.F.</h2>
 <div class="outline-text-2" id="text-1">
 </div><div id="outline-container-sec-1-1" class="outline-3">
-<h3 id="sec-1-1"><span class="section-number-3">1.1</span> python evaluation</h3>
+<h3 id="sec-1-1"><span class="section-number-3">1.1</span> Client Web</h3>
 <div class="outline-text-3" id="text-1-1">
-<div class="org-src-container">
-
-<pre class="src src-emacs-lisp">(org-babel-do-load-languages
- 'org-babel-load-languages
- '((python . t)
-   (sh . t)
-   ))
-</pre>
-</div>
-</div>
-</div>
-
-<div id="outline-container-sec-1-2" class="outline-3">
-<h3 id="sec-1-2"><span class="section-number-3">1.2</span> python requirement</h3>
-<div class="outline-text-3" id="text-1-2">
-<div class="org-src-container">
-
-<pre class="src src-sh">pip install requests beautifulsoup4 pandas lxml <span style="color: #cdcd00;">#</span><span style="color: #cdcd00;">xlrd</span>
-</pre>
-</div>
-</div>
-</div>
-
-<div id="outline-container-sec-1-3" class="outline-3">
-<h3 id="sec-1-3"><span class="section-number-3">1.3</span> export</h3>
-<div class="outline-text-3" id="text-1-3">
-<div class="org-src-container">
-
-<pre class="src src-emacs-lisp">(require '<span style="color: #cd00cd;">package</span>)
-(add-to-list 'package-archives
-             '(<span style="color: #00cd00;">"marmalade"</span> . <span style="color: #00cd00;">"http://marmalade-repo.org/packages/"</span>) t)
-(add-to-list 'package-archives '(<span style="color: #00cd00;">"org"</span> . <span style="color: #00cd00;">"http://orgmode.org/elpa/"</span>) t)
-(package-archive-base <span style="color: #00cd00;">"htmlize"</span>)
-(require '<span style="color: #cd00cd;">htmlize</span>)
-</pre>
-</div>
-</div>
-</div>
-</div>
-<div id="outline-container-sec-2" class="outline-2">
-<h2 id="sec-2"><span class="section-number-2">2</span> intranet</h2>
-<div class="outline-text-2" id="text-2">
-</div>
-
-<div id="outline-container-sec-2-1" class="outline-3">
-<h3 id="sec-2-1"><span class="section-number-3">2.1</span> Import et definition</h3>
-<div class="outline-text-3" id="text-2-1">
-<div class="org-src-container">
-
-<pre class="src src-python" id="import">import sys
-
-import requests
-import pandas
-from bs4 import BeautifulSoup
-import StringIO
-
-<span style="color: #cdcd00;">LOGIN_URL</span> = <span style="color: #00cd00;">"https://intranet.sgdf.fr"</span>
-<span style="color: #cdcd00;">EXTRACT_URL</span> = <span style="color: #00cd00;">"https://intranet.sgdf.fr/Specialisation/Sgdf/Adherents/ExtraireAdherents.aspx"</span>
-<span style="color: #cdcd00;">EFFECTIF_URL</span> = <span style="color: #00cd00;">"https://intranet.sgdf.fr/Specialisation/Sgdf/Pilotage/Adherents/EffectifTotalCategorieSexe.aspx"</span>
-
-<span style="color: #cdcd00;">HEADERS</span> = {
-    <span style="color: #00cd00;">'User-Agent'</span>: <span style="color: #00cd00;">"Mozilla/5.0 (Windows NT 6.1; rv:31.0) Gecko/20100101 Firefox/31.0"</span>,
-    <span style="color: #00cd00;">'Accept'</span>: <span style="color: #00cd00;">"text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"</span>,
-    <span style="color: #00cd00;">'Accept-Language'</span>: <span style="color: #00cd00;">'fr,fr-fr;q=0.8,en-us;q=0.5,en;q=0.3'</span>,
-}
-
-<span style="color: #cdcd00;">COULEURS</span> = {<span style="color: #00cd00;">"21*"</span>: <span style="color: #00cd00;">"orange"</span>,
-    <span style="color: #00cd00;">"22*"</span>: <span style="color: #00cd00;">"bleu"</span>,
-    <span style="color: #00cd00;">"23*"</span>: <span style="color: #00cd00;">"rouge"</span>,
-    <span style="color: #00cd00;">"24*"</span>: <span style="color: #00cd00;">"vert"</span>,
-    <span style="color: #00cd00;">"27*"</span>: <span style="color: #00cd00;">"farfa"</span>,
-    }
-
-<span style="color: #cdcd00;">viewstate</span> = <span style="color: #cd00cd;">None</span>
-</pre>
-</div>
-</div>
-</div>
-<div id="outline-container-sec-2-2" class="outline-3">
-<h3 id="sec-2-2"><span class="section-number-3">2.2</span> Initialise la session intranet.</h3>
-<div class="outline-text-3" id="text-2-2">
 <p>
-Afin de <b>POST</b> les données de login, il faut faire un <b>GET</b> préalable pour
-récupérer l'<b>eventvalidation</b> et le <b>viewstate</b> (visiblement indispensable a
-ASP&#x2026; ) depuis le formulaire WEB.
-</p>
-<div class="org-src-container">
-
-<pre class="src src-python" id="init">def <span style="color: #0000ee; font-weight: bold;">init_session</span>(s, login, password):
-    <span style="color: #cdcd00;">r</span> = s.get(LOGIN_URL, verify=<span style="color: #cd00cd;">True</span> )\
-
-    <span style="color: #cdcd00;"># </span><span style="color: #cdcd00;">parse and retrieve two vital form values</span>
-    <span style="color: #cdcd00;">soup</span> = BeautifulSoup(r.text)
-    <span style="color: #cdcd00;">viewstate</span> = soup.select(<span style="color: #00cd00;">"#__VIEWSTATE"</span>)[0][<span style="color: #00cd00;">'value'</span>]
-    <span style="color: #cdcd00;">eventvalidation</span> = soup.select(<span style="color: #00cd00;">"#__EVENTVALIDATION"</span>)[0][<span style="color: #00cd00;">'value'</span>]\
-
-    <span style="color: #cdcd00;">formdata</span> = {
-        <span style="color: #00cd00;">'__EVENTVALIDATION'</span>: eventvalidation,
-        <span style="color: #00cd00;">'__EVENTTARGET'</span>: <span style="color: #00cd00;">''</span>,
-        <span style="color: #00cd00;">'__EVENTARGUMENT'</span>: <span style="color: #00cd00;">''</span>,
-        <span style="color: #00cd00;">'__VIEWSTATE'</span>: viewstate,
-        <span style="color: #00cd00;">'__VIEWSTATEGENERATOR'</span>: <span style="color: #00cd00;">'F4403698'</span>,
-        <span style="color: #00cd00;">"ctl00$MainContent$login"</span>:login,
-        <span style="color: #00cd00;">"ctl00$MainContent$password"</span>: password,
-        <span style="color: #00cd00;">"ctl00$MainContent$_btnValider"</span>: <span style="color: #00cd00;">"Se connecter"</span>,
-        <span style="color: #00cd00;">"eo_version"</span>: <span style="color: #00cd00;">"11.0.20.2"</span>,
-        <span style="color: #00cd00;">"eo_style_keys"</span>: <span style="color: #00cd00;">"/wFk"</span>,
-    }\
-
-    <span style="color: #cdcd00;">r</span> = s.post(LOGIN_URL, data=formdata, verify=<span style="color: #cd00cd;">True</span>, headers=HEADERS, allow_redirects=<span style="color: #cd00cd;">True</span> )
-    print(<span style="color: #00cd00;">"Se connecter"</span> not in r.text.encode(<span style="color: #00cd00;">'utf-8'</span>))
-</pre>
-</div>
-
-<p>
-Exemple
-</p>
-
-<div class="org-src-container">
-
-<pre class="src src-python">from appis import *
-
-<span style="color: #cdcd00;">s</span> = requests.session()
-init_session(s, login, password)
-print(s.cookies.list_domains())
-print(s.cookies.keys())
-</pre>
-</div>
-
-<pre class="example">
-&gt;&gt;&gt; &gt;&gt;&gt; &gt;&gt;&gt; &gt;&gt;&gt; True
-['intranet.sgdf.fr']
-['ASP.NET_SessionId', 'redirect_delegation', 'redirect_individu', 'redirect_saison']
-</pre>
-</div>
-</div>
-<div id="outline-container-sec-2-3" class="outline-3">
-<h3 id="sec-2-3"><span class="section-number-3">2.3</span> VIEWSTAT</h3>
-<div class="outline-text-3" id="text-2-3">
-<div class="org-src-container">
-
-<pre class="src src-python" id="viewstate">def <span style="color: #0000ee; font-weight: bold;">get_viewstate</span>(s, url):
-    <span style="color: #cdcd00;"># </span><span style="color: #cdcd00;">get form data</span>
-    <span style="color: #cdcd00;">r</span> = s.get(url)\
-
-    <span style="color: #cdcd00;">soup</span> = BeautifulSoup(r.text)
-    <span style="color: #cdcd00;"># </span><span style="color: #cdcd00;">parse and retrieve vital form value</span>
-    <span style="color: #cdcd00;">viewstate</span> = soup.select(<span style="color: #00cd00;">"#__VIEWSTATE"</span>)[0][<span style="color: #00cd00;">'value'</span>]
-    return viewstate
-</pre>
-</div>
-</div>
-</div>
-<div id="outline-container-sec-2-4" class="outline-3">
-<h3 id="sec-2-4"><span class="section-number-3">2.4</span> Extraction des données des chefs</h3>
-<div class="outline-text-3" id="text-2-4">
-<p>
-Ici on crée une <b>dataframe</b> des données [état civil, inscriptions] des chefs
-et cheftaines.  Les chefs pré-inscrits ne sont pas pris en compte car
-généralement reconduits automatiquement il ne font pas partie de l'effectif
-actuel des chefs.
-</p>
-<div class="org-src-container">
-
-<pre class="src src-python" id="extract_chefs">def <span style="color: #0000ee; font-weight: bold;">extraire_chefs</span>(s, viewstate, codes_chefs):
-    <span style="color: #cdcd00;">formdata</span> = {
-        <span style="color: #00cd00;">'__EVENTTARGET'</span>: <span style="color: #00cd00;">''</span>,
-        <span style="color: #00cd00;">'__EVENTARGUMENT'</span>: <span style="color: #00cd00;">''</span>,
-        <span style="color: #00cd00;">'__VIEWSTATE'</span>: viewstate,
-        <span style="color: #00cd00;">'__VIEWSTATEGENERATOR'</span>: <span style="color: #00cd00;">'F4403698'</span>,
-        <span style="color: #00cd00;">"ctl00$MainContent$_selecteur$_tbCode"</span>: <span style="color: #00cd00;">""</span>,
-        <span style="color: #00cd00;">"ctl00$MainContent$_tbCodesFonctions"</span>: codes_chefs,
-        <span style="color: #00cd00;">"ctl00$MainContent$_ddCategorieMembre"</span>:-1,
-        <span style="color: #00cd00;">"ctl00$MainContent$_ddTypeInscription"</span>: -1,
-        <span style="color: #00cd00;">"ctl00$MainContent$_ddSpecialite"</span>:-1,
-        <span style="color: #00cd00;">"ctl00$MainContent$_ddTypeContact"</span>:-1,
-        <span style="color: #00cd00;">"ctl00$MainContent$_ddDiplome"</span>:-1,
-        <span style="color: #00cd00;">"ctl00$MainContent$_ddQualification"</span>:-1,
-        <span style="color: #00cd00;">"ctl00$MainContent$_ddFormation"</span>:-1,
-        <span style="color: #00cd00;">"ctl00$MainContent$_ddRevue"</span>:-1,
-        <span style="color: #00cd00;">"ctl00$MainContent$_ddMailInfoMouv"</span>:-1,
-        <span style="color: #00cd00;">"ctl00$MainContent$_ddMailInfoExt"</span>:-1,
-        <span style="color: #00cd00;">"ctl00$MainContent$_cbExtraireIndividu"</span>: <span style="color: #00cd00;">"on"</span>,
-        <span style="color: #00cd00;">"ctl00$MainContent$_cbExtraireInscription"</span>: <span style="color: #00cd00;">"on"</span>,
-        <span style="color: #00cd00;">"ctl00$MainContent$_btnExporter.x"</span>:50,
-        <span style="color: #00cd00;">"ctl00$MainContent$_btnExporter.y"</span>:7,
-    }\
-
-    <span style="color: #cdcd00;">r</span> = s.post(EXTRACT_URL, data=formdata, headers=HEADERS)
-    print(r.headers[<span style="color: #00cd00;">'content-type'</span>])
-    <span style="color: #cdcd00;">xls_file</span> = StringIO.StringIO(r.text.encode(<span style="color: #00cd00;">"utf-8"</span>))
-    <span style="color: #cdcd00;">chefs</span> = pandas.read_html(xls_file, header=0)[0]\
-
-    <span style="color: #cdcd00;"># </span><span style="color: #cdcd00;">on vire les pre inscrits</span>
-    <span style="color: #cdcd00;">chefs</span> = chefs[chefs[<span style="color: #00cd00;">'Inscriptions.Type'</span>]  &lt; 2]
-    <span style="color: #0000ee; font-weight: bold;">len</span>(chefs) \
-
-    return chefs
-</pre>
-</div>
-
-<p>
-Exemple
-</p>
-
-<div class="org-src-container">
-
-<pre class="src src-python"><span style="color: #cdcd00;">VIEWSTATE</span> = get_viewstate(s, EXTRACT_URL)
-
-<span style="color: #cdcd00;">codes_chefs</span> = <span style="color: #00cd00;">"21*"</span>
-<span style="color: #cdcd00;">chefs</span> = extraire_chefs(s, VIEWSTATE, codes_chefs)
-print(<span style="color: #0000ee; font-weight: bold;">len</span>(chefs))
-<span style="color: #0000ee; font-weight: bold;">len</span>(chefs)
-</pre>
-</div>
-
-<p>
-104
-104
+@ <a href="http://sgdf.nazkerin.org">http://sgdf.nazkerin.org</a>
 </p>
 </div>
-</div>
-
-<div id="outline-container-sec-2-5" class="outline-3">
-<h3 id="sec-2-5"><span class="section-number-3">2.5</span> Extraction des effectifs de groupe</h3>
-<div class="outline-text-3" id="text-2-5">
+<div id="outline-container-sec-1-1-1" class="outline-4">
+<h4 id="sec-1-1-1"><span class="section-number-4">1.1.1</span> usage</h4>
+<div class="outline-text-4" id="text-1-1-1">
+</div><ol class="org-ol"><li><code>/</code><br  /><div class="outline-text-5" id="text-1-1-1-1">
 <p>
-Les données de groupes sont extraites en parsant le tableau 'effectif total par
-structure' issu de l'onglet de pilotage adhérent.
+Affiche tout les membres de la base de données
 </p>
+</div>
+</li>
 
+<li><code>/member/&lt;_id&gt;</code><br  /><div class="outline-text-5" id="text-1-1-1-2">
 <p>
-Les colonnes du résultat correspondent au tableau suivant
+Détails d'un membre à partir de son numéro d'adhérent
 </p>
-<div class="org-src-container">
-
-<pre class="src src-text">|---+---+---+---+---+---+---+---+---+---+---+---|
-| Resp      |  Jeunes   | M. Assoc  | TOTAL     |
-|---+---+---+---+---+---+---+---+---+---+---+---|
-| H | F | T | H | F | T | H | F | T | H | F | T |
-|---+---+---+---+---+---+---+---+---+---+---+---|
-</pre>
 </div>
+</li>
 
-
-<div class="org-src-container">
-
-<pre class="src src-python" id="extract_groupes">def <span style="color: #0000ee; font-weight: bold;">extraire_groupes</span>(s, viewstate):
-    <span style="color: #cdcd00;">r</span> = s.get(EFFECTIF_URL, verify=<span style="color: #cd00cd;">True</span> )\
-
-    <span style="color: #cdcd00;">soup</span> = BeautifulSoup(r.text)
-    <span style="color: #cdcd00;">viewstate</span> = soup.select(<span style="color: #00cd00;">"#__VIEWSTATE"</span>)[0][<span style="color: #00cd00;">'value'</span>]
-    <span style="color: #cdcd00;">eventvalidation</span> = soup.select(<span style="color: #00cd00;">"#__EVENTVALIDATION"</span>)[0][<span style="color: #00cd00;">'value'</span>]\
-
-    <span style="color: #cdcd00;">formdata</span> = {
-        <span style="color: #00cd00;">'__VIEWSTATE'</span>: viewstate,
-        <span style="color: #00cd00;">'__VIEWSTATEGENERATOR'</span>: <span style="color: #00cd00;">'C9A39B21'</span>,
-        <span style="color: #00cd00;">'__VIEWSTATEENCRYPTED'</span>: <span style="color: #00cd00;">''</span>,
-        <span style="color: #00cd00;">'__EVENTVALIDATION'</span>: eventvalidation,
-        <span style="color: #00cd00;">'ctl00$ctl00$_ddDelegations'</span>: 0,
-        <span style="color: #00cd00;">'ctl00$ctl00$MainContent$EntreeContent$_entree$_pilotageEntree$_btnPopupStructure$_tbResult'</span>: <span style="color: #00cd00;">'406950000 - TERRITOIRE LYON LEVANT'</span>,
-        <span style="color: #00cd00;">'ctl00$ctl00$MainContent$EntreeContent$_entree$_pilotageEntree$_cbStructuresDetaillees'</span>: <span style="color: #00cd00;">"on"</span>,
-        <span style="color: #00cd00;">'ctl00$ctl00$MainContent$EntreeContent$_entree$_pilotageEntree$_ddSaison'</span>: 2015,
-        <span style="color: #00cd00;">'ctl00$ctl00$MainContent$EntreeContent$_entree$_pilotageEntree$_ddHemisphere'</span>: 0,
-        <span style="color: #00cd00;">'ctl00$ctl00$MainContent$EntreeContent$_entree$_ddTrancheAge'</span>: -1,
-        <span style="color: #00cd00;">"ctl00$ctl00$MainContent$_btnValider.x"</span>: 43,
-        <span style="color: #00cd00;">"ctl00$ctl00$MainContent$_btnValider.y"</span>: 13,
-        <span style="color: #00cd00;">"eo_version"</span>: <span style="color: #00cd00;">"11.0.20.2"</span>,
-        <span style="color: #00cd00;">"eo_style_keys"</span>: <span style="color: #00cd00;">"/wFk"</span>,
-    }\
-
-    <span style="color: #cdcd00;">r</span> = s.post(EFFECTIF_URL, data=formdata, headers=HEADERS)
-    <span style="color: #cdcd00;">soup</span> = BeautifulSoup(r.text)
-    <span style="color: #cdcd00;">table</span> = soup.select(<span style="color: #00cd00;">"#ctl00_ctl00_MainContent_DivsContent__table__gvResult"</span>)[0].encode(<span style="color: #00cd00;">"utf-8"</span>)
-    <span style="color: #cdcd00;">groupes</span> = pandas.read_html(table, skiprows=<span style="color: #0000ee; font-weight: bold;">range</span>(2))
-    \
-    return groupes[0]
-</pre>
-</div>
-
+<li><code>/structure</code><br  /><div class="outline-text-5" id="text-1-1-1-3">
 <p>
-Exemple pour le groupe du Sacré Coeur
+Affiche toutes les structures triées par identifiant de structure
 </p>
-
-<div class="org-src-container">
-
-<pre class="src src-python"><span style="color: #cdcd00;">EFFECTIF_URL</span> = <span style="color: #00cd00;">"https://intranet.sgdf.fr/Specialisation/Sgdf/Pilotage/Adherents/EffectifTotalCategorieSexe.aspx"</span>
-
-
-
-<span style="color: #cdcd00;">groupes</span> = extraire_groupes(s, VIEWSTATE)
-<span style="color: #cdcd00;">#</span><span style="color: #cdcd00;">print(groupes.iloc[1:5])</span>
-print(groupes[groupes[0].<span style="color: #0000ee; font-weight: bold;">str</span>.contains(<span style="color: #00cd00;">"406950700"</span>)][<span style="color: #0000ee; font-weight: bold;">range</span>(1,12)])
-groupes[groupes[0].<span style="color: #0000ee; font-weight: bold;">str</span>.contains(<span style="color: #00cd00;">"406950700"</span>)][<span style="color: #0000ee; font-weight: bold;">range</span>(1,12)].values[0].tolist()
-</pre>
 </div>
+</li>
 
-<pre class="example">
-[28, 18, 46, 71, 83, 154, 0, 0, 0, 99, 101]
-</pre>
-</div>
-</div>
-<div id="outline-container-sec-2-6" class="outline-3">
-<h3 id="sec-2-6"><span class="section-number-3">2.6</span> Les formations des chefs</h3>
-<div class="outline-text-3" id="text-2-6">
+<li><code>/structure/&lt;structure&gt;</code><br  /><div class="outline-text-5" id="text-1-1-1-4">
 <p>
-L'intranet permet de requeter les chefs avec une formation ou qualification données.
-Seulement le fichier résultat n'indique qu'une seul des diplomes par responsable.
-Cela oblige à faire une requète par qualification et diplome voulue.
-</p>
-
-<p>
-A l'heure actuelle, sont supportés par l'API:
+Liste l'ensemble des membres de la structure par son <code>&lt;identifiant de structure&gt;</code>
 </p>
 <ul class="org-ul">
-<li>Animateur SF
+<li>TODO [ ] afficher les structures enfants
 </li>
-<li>Directeur SF
+</ul>
+</div>
 </li>
-<li>TECH
+
+<li><code>/request/&lt;fmt&gt;/&lt;req&gt;</code><br  /><div class="outline-text-5" id="text-1-1-1-5">
+<p>
+Execute une requete en base de donnée.
+</p>
+<ul class="org-ul">
+<li><code>fmt</code> : format de sortie html ou csv
 </li>
-<li>APPRO
+<li><code>req</code> : de la forme <code>/&lt;collection&gt;.&lt;champ&gt;=&lt;type&gt;:&lt;valeur&gt;</code>
+<ul class="org-ul">
+<li>modèle de la base
 </li>
-<li>APPRO ANIMATION
+</ul>
 </li>
-<li>BAFA
+</ul>
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="left" />
+
+<col  class="left" />
+
+<col  class="left" />
+
+<col  class="left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="left">collections</th>
+<th scope="col" class="left">champs</th>
+<th scope="col" class="left">type</th>
+<th scope="col" class="left">exemple</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="left">members</td>
+<td class="left">_id</td>
+<td class="left">i</td>
+<td class="left">&#xa0;</td>
+</tr>
+
+<tr>
+<td class="left">&#xa0;</td>
+<td class="left">nom</td>
+<td class="left">s</td>
+<td class="left">&#xa0;</td>
+</tr>
+
+<tr>
+<td class="left">&#xa0;</td>
+<td class="left">prenom</td>
+<td class="left">s</td>
+<td class="left">&#xa0;</td>
+</tr>
+
+<tr>
+<td class="left">&#xa0;</td>
+<td class="left">structure</td>
+<td class="left">s</td>
+<td class="left">&#xa0;</td>
+</tr>
+
+<tr>
+<td class="left">&#xa0;</td>
+<td class="left">fonction</td>
+<td class="left">s</td>
+<td class="left">210, 213, 220, 600,</td>
+</tr>
+</tbody>
+<tbody>
+<tr>
+<td class="left">inscriptions</td>
+<td class="left">ends</td>
+<td class="left">s</td>
+<td class="left">&#xa0;</td>
+</tr>
+
+<tr>
+<td class="left">&#xa0;</td>
+<td class="left">inscription<sub>type</sub></td>
+<td class="left">i</td>
+<td class="left">0[inscrit], 1, 2 [pre inscrit]</td>
+</tr>
+</tbody>
+<tbody>
+<tr>
+<td class="left">formations</td>
+<td class="left">name</td>
+<td class="left">s</td>
+<td class="left">TECH, APPRO, FIF,</td>
+</tr>
+
+<tr>
+<td class="left">&#xa0;</td>
+<td class="left">role</td>
+<td class="left">s</td>
+<td class="left">Formateur, Stagiaire</td>
+</tr>
+
+<tr>
+<td class="left">&#xa0;</td>
+<td class="left">date</td>
+<td class="left">&#xa0;</td>
+<td class="left">&#xa0;</td>
+</tr>
+</tbody>
+<tbody>
+<tr>
+<td class="left">diplomes</td>
+<td class="left">name</td>
+<td class="left">s</td>
+<td class="left">BAFA, 2 Buchettes,</td>
+</tr>
+
+<tr>
+<td class="left">&#xa0;</td>
+<td class="left">date</td>
+<td class="left">s</td>
+<td class="left">&#xa0;</td>
+</tr>
+</tbody>
+<tbody>
+<tr>
+<td class="left">qualifications</td>
+<td class="left">name</td>
+<td class="left">s</td>
+<td class="left">&#xa0;</td>
+</tr>
+
+<tr>
+<td class="left">&#xa0;</td>
+<td class="left">titular</td>
+<td class="left">s</td>
+<td class="left">Oui</td>
+</tr>
+
+<tr>
+<td class="left">&#xa0;</td>
+<td class="left">obtained</td>
+<td class="left">s</td>
+<td class="left">JJ/MM/AAAA</td>
+</tr>
+
+<tr>
+<td class="left">&#xa0;</td>
+<td class="left">expires</td>
+<td class="left">s</td>
+<td class="left">JJ/MM/AAAA</td>
+</tr>
+</tbody>
+</table>
+<ul class="org-ul">
+<li><code>type</code> : <b>s</b> pour une chaine de caractère et <b>i</b> pour une valeur numerique
+</li>
+<li><code>valeur</code> : en toute lettre/chiffre avec les espaces
 </li>
 </ul>
 
-<div class="org-src-container">
-
-<pre class="src src-python" id="formdata"><span style="color: #cdcd00;">FORMDATA</span> = {
-    <span style="color: #00cd00;">'__EVENTTARGET'</span>: <span style="color: #00cd00;">''</span>,
-    <span style="color: #00cd00;">'__EVENTARGUMENT'</span>: <span style="color: #00cd00;">''</span>,
-    <span style="color: #00cd00;">'__VIEWSTATEGENERATOR'</span>: <span style="color: #00cd00;">'F4403698'</span>,
-    <span style="color: #00cd00;">"ctl00$MainContent$_selecteur$_tbCode"</span>: <span style="color: #00cd00;">""</span>,
-    <span style="color: #00cd00;">"ctl00$MainContent$_tbCodesFonctions"</span>: <span style="color: #00cd00;">""</span>,
-    <span style="color: #00cd00;">"ctl00$MainContent$_ddCategorieMembre"</span>:-1,
-    <span style="color: #00cd00;">"ctl00$MainContent$_ddTypeInscription"</span>:-1,
-    <span style="color: #00cd00;">"ctl00$MainContent$_ddSpecialite"</span>:-1,
-    <span style="color: #00cd00;">"ctl00$MainContent$_ddTypeContact"</span>:-1,
-    <span style="color: #00cd00;">"ctl00$MainContent$_ddDiplome"</span>:-1,
-    <span style="color: #00cd00;">"ctl00$MainContent$_ddQualification"</span>: -1,
-    <span style="color: #00cd00;">"ctl00$MainContent$_ddFormation"</span>:-1,
-    <span style="color: #00cd00;">"ctl00$MainContent$_ddRevue"</span>:-1,
-    <span style="color: #00cd00;">"ctl00$MainContent$_ddMailInfoMouv"</span>:-1,
-    <span style="color: #00cd00;">"ctl00$MainContent$_ddMailInfoExt"</span>:-1,
-    <span style="color: #00cd00;">"ctl00$MainContent$_btnExporter.x"</span>:50,
-    <span style="color: #00cd00;">"ctl00$MainContent$_btnExporter.y"</span>:7,
-}
-</pre>
-</div>
-</div>
-
-<div id="outline-container-sec-2-6-1" class="outline-4">
-<h4 id="sec-2-6-1"><span class="section-number-4">2.6.1</span> Qualification Scoutisme Français</h4>
-<div class="outline-text-4" id="text-2-6-1">
-<div class="org-src-container">
-
-<pre class="src src-python" id="extract_qualif"><span style="color: #cdcd00;">#</span>
-<span style="color: #cdcd00;">codes_qualifs</span> = {
-    <span style="color: #00cd00;">"dir"</span>: 1,
-    <span style="color: #00cd00;">"anim"</span>: 2,
-    <span style="color: #00cd00;">"RU"</span>: 3,
-}\
-
-def <span style="color: #0000ee; font-weight: bold;">extraire_qualifs</span>(s, viewstate, codes_chefs, qualif):
-    <span style="color: #cdcd00;">formdata</span> = <span style="color: #0000ee; font-weight: bold;">dict</span>(FORMDATA, **{<span style="color: #00cd00;">"ctl00$MainContent$_ddQualification"</span>: codes_qualifs[qualif],
-                                 <span style="color: #00cd00;">"ctl00$MainContent$_tbCodesFonctions"</span>: codes_chefs,
-                                 <span style="color: #00cd00;">'__VIEWSTATE'</span>: viewstate, })
-    <span style="color: #cdcd00;">r</span> = s.post(EXTRACT_URL, data=formdata, headers=HEADERS)
-    <span style="color: #cdcd00;">xls_file</span> = StringIO.StringIO(r.text.encode(<span style="color: #00cd00;">"utf-8"</span>))
-    <span style="color: #cdcd00;">qualifs</span> = pandas.read_html(xls_file, header=0)[0]
-    qualifs.rename(columns={<span style="color: #00cd00;">'QualificationsQualificationJeunesseSports.Libelle'</span>:<span style="color: #00cd00;">'QualificationsQualificationJeunesseSports.Libelle_%s'</span> % qualif}, inplace=<span style="color: #cd00cd;">True</span>)
-    return qualifs
-</pre>
-</div>
-
 <p>
-Exemple nombre de chefs qualifiés
+Exemple :
+Tous les AP [code fonction 600] dont l'inscription est valide
+<a href="http://sgdf.nazkerin.org/request/html/members.fonction=s:600/inscriptions.inscription_type=i:0">http://sgdf.nazkerin.org/request/html/members.fonction=s:600/inscriptions.inscription_type=i:0</a>
 </p>
-
-<div class="org-src-container">
-
-<pre class="src src-python"><span style="color: #cdcd00;">qualifications</span> = {}
-<span style="color: #cdcd00;">qualifications</span>[<span style="color: #00cd00;">'anim'</span>] = extraire_qualifs(s, VIEWSTATE, codes_chefs, <span style="color: #00cd00;">"anim"</span>)
-<span style="color: #cdcd00;">qualifications</span>[<span style="color: #00cd00;">'dir'</span>] = extraire_qualifs(s, VIEWSTATE, codes_chefs, <span style="color: #00cd00;">"dir"</span>)
-
-<span style="color: #cdcd00;">grouped</span> = qualifications[<span style="color: #00cd00;">'anim'</span>].groupby([<span style="color: #00cd00;">"Individu.CodeAdherent"</span>])
-<span style="color: #cdcd00;">index</span> = [gp_keys[0] for gp_keys in grouped.groups.values()]
-<span style="color: #cdcd00;">df</span> = qualifications[<span style="color: #00cd00;">'anim'</span>].reindex(index)
-
-<span style="color: #cdcd00;"># </span><span style="color: #cdcd00;">remove duplicates</span>
-<span style="color: #cdcd00;">qualifications</span>[<span style="color: #00cd00;">'anim'</span>] = qualifications[<span style="color: #00cd00;">'anim'</span>].drop_duplicates(
-    subset=[u<span style="color: #00cd00;">'Individu.CodeAdherent'</span>, u<span style="color: #00cd00;">'Individu.Nom'</span>, u<span style="color: #00cd00;">'Individu.Prenom'</span>,])
-<span style="color: #cdcd00;">qualifications</span>[<span style="color: #00cd00;">'dir'</span>] = qualifications[<span style="color: #00cd00;">'dir'</span>].drop_duplicates(
-    subset=[u<span style="color: #00cd00;">'Individu.CodeAdherent'</span>, u<span style="color: #00cd00;">'Individu.Nom'</span>, u<span style="color: #00cd00;">'Individu.Prenom'</span>,])
-
-[[<span style="color: #00cd00;">"anim"</span>, <span style="color: #00cd00;">"dir"</span>], [<span style="color: #0000ee; font-weight: bold;">len</span>(qualifications[<span style="color: #00cd00;">'anim'</span>]), <span style="color: #0000ee; font-weight: bold;">len</span>(qualifications[<span style="color: #00cd00;">'dir'</span>])]]
-</pre>
-</div>
-
-<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
-
-
-<colgroup>
-<col  class="right" />
-
-<col  class="right" />
-</colgroup>
-<tbody>
-<tr>
-<td class="right">anim</td>
-<td class="right">dir</td>
-</tr>
-
-<tr>
-<td class="right">86</td>
-<td class="right">11</td>
-</tr>
-</tbody>
-</table>
-</div>
-</div>
-
-
-
-<div id="outline-container-sec-2-6-2" class="outline-4">
-<h4 id="sec-2-6-2"><span class="section-number-4">2.6.2</span> Les diplomes</h4>
-<div class="outline-text-4" id="text-2-6-2">
-<div class="org-src-container">
-
-<pre class="src src-python" id="extract_diplomes"><span style="color: #cdcd00;">codes_diplomes</span> = {
-    <span style="color: #00cd00;">"bafa"</span>: 73,
-}\
-
-def <span style="color: #0000ee; font-weight: bold;">extraire_diplomes</span>(s, viewstate, codes_chefs, diplome):
-    <span style="color: #cdcd00;">formdata</span> = <span style="color: #0000ee; font-weight: bold;">dict</span>(FORMDATA, **{<span style="color: #00cd00;">"ctl00$MainContent$_ddDiplome"</span>: codes_diplomes[diplome],
-                                 <span style="color: #00cd00;">"ctl00$MainContent$_tbCodesFonctions"</span>: codes_chefs,
-                                 <span style="color: #00cd00;">'__VIEWSTATE'</span>: viewstate, })
-    <span style="color: #cdcd00;">r</span> = s.post(EXTRACT_URL, data=formdata, headers=HEADERS)
-    <span style="color: #cdcd00;">xls_file</span> = StringIO.StringIO(r.text.encode(<span style="color: #00cd00;">"utf-8"</span>))
-    <span style="color: #cdcd00;">diplomes</span> = pandas.read_html(xls_file, header=0)[0]
-    diplomes.rename(columns={<span style="color: #00cd00;">'DiplomesType.Libelle'</span>:<span style="color: #00cd00;">'DiplomesType.Libelle_%s'</span> % diplome}, inplace=<span style="color: #cd00cd;">True</span>)
-    return diplomes
-</pre>
-</div>
-
-<p>
-Exemple : nombre de chefs titulaire du BAFA
-</p>
-
-<div class="org-src-container">
-
-<pre class="src src-python"><span style="color: #cdcd00;">bafas</span> = extraire_diplomes(s, VIEWSTATE, codes_chefs, <span style="color: #00cd00;">"bafa"</span>)
-print(<span style="color: #0000ee; font-weight: bold;">len</span>(bafas))
-</pre>
-</div>
-
-<pre class="example">
-9
-</pre>
-</div>
-</div>
-
-<div id="outline-container-sec-2-6-3" class="outline-4">
-<h4 id="sec-2-6-3"><span class="section-number-4">2.6.3</span> Les formations SGDF</h4>
-<div class="outline-text-4" id="text-2-6-3">
-<div class="org-src-container">
-
-<pre class="src src-python" id="extract_formations"><span style="color: #cdcd00;">codes_formations</span> = {
-    <span style="color: #00cd00;">"tech"</span>: 52,
-    <span style="color: #00cd00;">"appro"</span>: 53,
-    <span style="color: #00cd00;">"approA"</span>: 244,
-    <span style="color: #00cd00;">"apf"</span>: 248,
-}\
-
-def <span style="color: #0000ee; font-weight: bold;">extraire_formations</span>(s, viewstate, codes_chefs, formation):
-    <span style="color: #cdcd00;">formdata</span> = <span style="color: #0000ee; font-weight: bold;">dict</span>(FORMDATA, **{<span style="color: #00cd00;">"ctl00$MainContent$_ddFormation"</span>: codes_formations[formation],
-                                 <span style="color: #00cd00;">"ctl00$MainContent$_tbCodesFonctions"</span>: codes_chefs,
-                                 <span style="color: #00cd00;">'__VIEWSTATE'</span>: viewstate, })
-    <span style="color: #cdcd00;">r</span> = s.post(EXTRACT_URL, data=formdata, headers=HEADERS)
-    <span style="color: #cdcd00;">xls_file</span> = StringIO.StringIO(r.text.encode(<span style="color: #00cd00;">"utf-8"</span>))
-    <span style="color: #cdcd00;">formations</span> = pandas.read_html(xls_file, header=0)[0]
-    formations.rename(columns={<span style="color: #00cd00;">'FormationsType.Libelle'</span>:<span style="color: #00cd00;">'FormationsType.Libelle_%s'</span> % formation}, inplace=<span style="color: #cd00cd;">True</span>)
-    return formations
-</pre>
-</div>
-</div>
-
-
-<ol class="org-ol"><li>formations scoutes<br  /><div class="outline-text-5" id="text-2-6-3-1">
-<div class="org-src-container">
-
-<pre class="src src-python"><span style="color: #cdcd00;">formations</span> = {}
-
-<span style="color: #cdcd00;">formations_input</span> = [<span style="color: #00cd00;">'tech'</span>, <span style="color: #00cd00;">'appro'</span>, <span style="color: #00cd00;">'approA'</span>, <span style="color: #00cd00;">'apf'</span>]
-
-<span style="color: #cdcd00;">results</span> = [[<span style="color: #00cd00;">"formation"</span>, <span style="color: #00cd00;">"effectif"</span>]]
-for formation_name in formations_input:
-    <span style="color: #cdcd00;">formations</span>[formation_name] = extraire_formations(s, VIEWSTATE, codes_chefs, formation_name)
-    <span style="color: #cdcd00;">results</span> += [(formation_name, <span style="color: #0000ee; font-weight: bold;">len</span>(formations[formation_name]))]
-
-results
-</pre>
-</div>
-
-<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
-
-
-<colgroup>
-<col  class="left" />
-
-<col  class="right" />
-</colgroup>
-<tbody>
-<tr>
-<td class="left">formation</td>
-<td class="right">effectif</td>
-</tr>
-
-<tr>
-<td class="left">tech</td>
-<td class="right">51</td>
-</tr>
-
-<tr>
-<td class="left">appro</td>
-<td class="right">16</td>
-</tr>
-
-<tr>
-<td class="left">approA</td>
-<td class="right">7</td>
-</tr>
-
-<tr>
-<td class="left">apf</td>
-<td class="right">35</td>
-</tr>
-</tbody>
-</table>
-</div>
-</li>
-<li>Inscriptions à une formation<br  /><div class="outline-text-5" id="text-2-6-3-2">
-<p>
-Le seul moyen de savoir si un adhérent est inscrit à une formation est de
-récupérer sa fiche adhérent et de parser les actions de formation.
-</p>
-
-<p>
-Attention toutes les actions de formation (passées et future) y sont
-répertoriées.
-</p>
-<div class="org-src-container">
-
-<pre class="src src-python" id="adherents">def <span style="color: #0000ee; font-weight: bold;">get_adherent</span>(s, num_adherent):
-    <span style="color: #cdcd00;">ADHERENT_URL</span> = <span style="color: #00cd00;">"https://intranet.sgdf.fr/Specialisation/Sgdf/adherents/RechercherAdherent.aspx?code="</span>
-    <span style="color: #cdcd00;">r</span> = s.get(<span style="color: #00cd00;">"%s%d"</span> % (ADHERENT_URL, num_adherent))
-    <span style="color: #cdcd00;">soup</span> = BeautifulSoup(r.text)
-    <span style="color: #cdcd00;">res</span> = []
-    <span style="color: #cdcd00;"># </span><span style="color: #cdcd00;">parse and retrieve two vital form values</span>
-    <span style="color: #cdcd00;">t</span> = soup.select(<span style="color: #00cd00;">"#ctl00_ctl00_MainContent_DivsContent__ActionsFormation__gvListe"</span>)[0]
-    for row in t.findAll(<span style="color: #00cd00;">"tr"</span>):
-        <span style="color: #cdcd00;">cells</span> = row.findAll(<span style="color: #00cd00;">"td"</span>)
-        if(<span style="color: #0000ee; font-weight: bold;">len</span>(cells) &gt; 2):
-           <span style="color: #cdcd00;">res</span> += [ (cells[0].text, cells[2].text) ] if cells[1].text == u<span style="color: #00cd00;">'Accept\xe9e'</span> else []
-    return res
-</pre>
-</div>
-
-<p>
-Exemple pour une cheftaine de la presqu'île
-</p>
-
-<div class="org-src-container">
-
-<pre class="src src-python">get_adherent(s, 131394538)
-</pre>
-</div>
-
-<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
-
-
-<colgroup>
-<col  class="left" />
-
-<col  class="left" />
-
-<col  class="left" />
-
-<col  class="left" />
-</colgroup>
-<tbody>
-<tr>
-<td class="left">u</td>
-<td class="left">Appro SG Animation/Accueil de Scoutisme</td>
-<td class="left">u</td>
-<td class="left">01/02/2015</td>
-</tr>
-</tbody>
-</table>
 </div>
 </li></ol>
 </div>
-<div id="outline-container-sec-2-6-4" class="outline-4">
-<h4 id="sec-2-6-4"><span class="section-number-4">2.6.4</span> Un peu de violence</h4>
-<div class="outline-text-4" id="text-2-6-4">
+<div id="outline-container-sec-1-1-2" class="outline-4">
+<h4 id="sec-1-1-2"><span class="section-number-4">1.1.2</span> dev</h4>
+<div class="outline-text-4" id="text-1-1-2">
+</div><ol class="org-ol"><li>flask + py mongo<br  /><div class="outline-text-5" id="text-1-1-2-1">
 <p>
-Évidement, on souhaite avoir l'information d'inscription pour tout nos chefs et cheftaines.
-Cette méthode oblige à requêter l'intranet pour chaque adhérent. On va donc cacher un peu tout ça.
-</p>
-
-<p>
-<b>Attention</b> la lenteur bien connue de l'intranet impose un délai variant de
-la demi seconde à la seconde pour obtenir une seule fiche adhérent. Ainsi
-pour realiser le cache de la centaine de chefs et cheftaines
-louveteaux-jeannettes de Lyon Levant il faut entre 50 et 100s
-</p>
-
-<div class="org-src-container">
-
-<pre class="src src-python"><span style="color: #cdcd00;">#</span><span style="color: #cdcd00;">inscriptions = {}</span>
-<span style="color: #cdcd00;">cache_keys</span> = inscriptions.keys()
-import math
-for num_adherent in chefs[u<span style="color: #00cd00;">'Individu.CodeAdherent'</span>]:
-    if not math.isnan(num_adherent) and <span style="color: #0000ee; font-weight: bold;">int</span>(num_adherent) not in cache_keys:
-        <span style="color: #cdcd00;">inscriptions</span>[<span style="color: #0000ee; font-weight: bold;">int</span>(num_adherent)] = get_adherent(s, num_adherent)
-
-from pprint import pprint
-pprint(inscriptions)
-<span style="color: #0000ee; font-weight: bold;">len</span>(inscriptions.keys())
-</pre>
-</div>
-</div>
-</div>
-</div>
-<div id="outline-container-sec-2-7" class="outline-3">
-<h3 id="sec-2-7"><span class="section-number-3">2.7</span> Fusion de données</h3>
-<div class="outline-text-3" id="text-2-7">
-<p>
-Cette méthode complètement bovine fusionne les données des adhérents avec
-les formations, qualifications et inscriptions en une unique base de
-données.
-</p>
-<div class="org-src-container">
-
-<pre class="src src-python" id="fusion">def <span style="color: #0000ee; font-weight: bold;">fusion</span>(**kwargs):
-    <span style="color: #cdcd00;">PACKS</span> = pandas.DataFrame([
-        (406953511, <span style="color: #00cd00;">"2"</span>),
-        (406950710, <span style="color: #00cd00;">"2"</span>),
-        (406951811, <span style="color: #00cd00;">"1"</span>),
-        (406950911, <span style="color: #00cd00;">"3"</span>),
-        (406951011, <span style="color: #00cd00;">"2"</span>),
-        (406951511, <span style="color: #00cd00;">"3"</span>),
-        (406950711, <span style="color: #00cd00;">"2"</span>),
-        (406952211, <span style="color: #00cd00;">"2"</span>),
-        (406950611, <span style="color: #00cd00;">"1"</span>),
-        (406951310, <span style="color: #00cd00;">"3"</span>),
-        (406950613, <span style="color: #00cd00;">"1"</span>),
-        (406951211, <span style="color: #00cd00;">"2"</span>),
-        (406952311, <span style="color: #00cd00;">"3"</span>),
-        (406952411, <span style="color: #00cd00;">"1"</span>),
-        (406951911, <span style="color: #00cd00;">"1"</span>),
-        (406952111, <span style="color: #00cd00;">"1"</span>),
-        (406951510, <span style="color: #00cd00;">"3"</span>),
-        (406951411, <span style="color: #00cd00;">"3"</span>),
-        (406951711, <span style="color: #00cd00;">"2"</span>),
-        (406950811, <span style="color: #00cd00;">"1"</span>),
-        (406951311, <span style="color: #00cd00;">"3"</span>),
-        \
-        (406953521, <span style="color: #00cd00;">"2"</span>),
-        (406950720, <span style="color: #00cd00;">"2"</span>),
-        (406951821, <span style="color: #00cd00;">"1"</span>),
-        (406950921, <span style="color: #00cd00;">"3"</span>),
-        (406951021, <span style="color: #00cd00;">"2"</span>),
-        (406951521, <span style="color: #00cd00;">"3"</span>),
-        (406950721, <span style="color: #00cd00;">"2"</span>),
-        (406952221, <span style="color: #00cd00;">"2"</span>),
-        (406950621, <span style="color: #00cd00;">"1"</span>),
-        (406951320, <span style="color: #00cd00;">"3"</span>),
-        (406950622, <span style="color: #00cd00;">"1"</span>),
-        (406951221, <span style="color: #00cd00;">"2"</span>),
-        (406952321, <span style="color: #00cd00;">"3"</span>),
-        (406952421, <span style="color: #00cd00;">"1"</span>),
-        (406951921, <span style="color: #00cd00;">"1"</span>),
-        (406952121, <span style="color: #00cd00;">"1"</span>),
-        (406951520, <span style="color: #00cd00;">"3"</span>),
-        (406951421, <span style="color: #00cd00;">"3"</span>),
-        (406951721, <span style="color: #00cd00;">"2"</span>),
-        (406950821, <span style="color: #00cd00;">"1"</span>),
-        (406951321, <span style="color: #00cd00;">"3"</span>),
-        \
-        (406953531, <span style="color: #00cd00;">"2"</span>),
-        (406950730, <span style="color: #00cd00;">"2"</span>),
-        (406951831, <span style="color: #00cd00;">"1"</span>),
-        (406950931, <span style="color: #00cd00;">"3"</span>),
-        (406951031, <span style="color: #00cd00;">"2"</span>),
-        (406951531, <span style="color: #00cd00;">"3"</span>),
-        (406950731, <span style="color: #00cd00;">"2"</span>),
-        (406952231, <span style="color: #00cd00;">"2"</span>),
-        (406950631, <span style="color: #00cd00;">"1"</span>),
-        (406951330, <span style="color: #00cd00;">"3"</span>),
-        (406950632, <span style="color: #00cd00;">"1"</span>),
-        (406951231, <span style="color: #00cd00;">"2"</span>),
-        (406952331, <span style="color: #00cd00;">"3"</span>),
-        (406952431, <span style="color: #00cd00;">"1"</span>),
-        (406951931, <span style="color: #00cd00;">"1"</span>),
-        (406952131, <span style="color: #00cd00;">"1"</span>),
-        (406951530, <span style="color: #00cd00;">"3"</span>),
-        (406951431, <span style="color: #00cd00;">"3"</span>),
-        (406951731, <span style="color: #00cd00;">"2"</span>),
-        (406950831, <span style="color: #00cd00;">"1"</span>),
-        (406951331, <span style="color: #00cd00;">"3"</span>),
-        \
-        (406953541, <span style="color: #00cd00;">"2"</span>),
-        (406950740, <span style="color: #00cd00;">"2"</span>),
-        (406951841, <span style="color: #00cd00;">"1"</span>),
-        (406950941, <span style="color: #00cd00;">"3"</span>),
-        (406951041, <span style="color: #00cd00;">"2"</span>),
-        (406951541, <span style="color: #00cd00;">"3"</span>),
-        (406950741, <span style="color: #00cd00;">"2"</span>),
-        (406952241, <span style="color: #00cd00;">"2"</span>),
-        (406950641, <span style="color: #00cd00;">"1"</span>),
-        (406951340, <span style="color: #00cd00;">"3"</span>),
-        (406950643, <span style="color: #00cd00;">"1"</span>),
-        (406951241, <span style="color: #00cd00;">"2"</span>),
-        (406952341, <span style="color: #00cd00;">"3"</span>),
-        (406952441, <span style="color: #00cd00;">"1"</span>),
-        (406951941, <span style="color: #00cd00;">"1"</span>),
-        (406952141, <span style="color: #00cd00;">"1"</span>),
-        (406951540, <span style="color: #00cd00;">"3"</span>),
-        (406951441, <span style="color: #00cd00;">"3"</span>),
-        (406951741, <span style="color: #00cd00;">"2"</span>),
-        (406950841, <span style="color: #00cd00;">"1"</span>),
-        (406951341, <span style="color: #00cd00;">"3"</span>),
-    ], columns=[u<span style="color: #00cd00;">'Structure.CodeStructure'</span>, <span style="color: #00cd00;">"pack"</span>])\
-
-    <span style="color: #cdcd00;">data</span> = kwargs.get(<span style="color: #00cd00;">'chefs'</span>)
-    <span style="color: #cdcd00;">qualifications</span> = kwargs.get(<span style="color: #00cd00;">'qualifications'</span>)
-    <span style="color: #cdcd00;">bafas</span> = kwargs.get(<span style="color: #00cd00;">'bafas'</span>)
-    <span style="color: #cdcd00;">formations</span> = kwargs.get(<span style="color: #00cd00;">'formations'</span>)
-    <span style="color: #cdcd00;">inscriptions</span> = kwargs.get(<span style="color: #00cd00;">'inscriptions'</span>, {})\
-
-    for qualif_name in [<span style="color: #00cd00;">'anim'</span>, <span style="color: #00cd00;">'dir'</span>]:
-        <span style="color: #cdcd00;">data</span> = pandas.merge(data,
-                            qualifications[qualif_name][[u<span style="color: #00cd00;">'Individu.CodeAdherent'</span>, u<span style="color: #00cd00;">'QualificationsQualificationJeunesseSports.Libelle_%s'</span> % qualif_name,]],
-                            on=<span style="color: #00cd00;">'Individu.CodeAdherent'</span>, suffixes=[<span style="color: #00cd00;">''</span>, <span style="color: #00cd00;">''</span>], how=<span style="color: #00cd00;">'outer'</span>)\
-
-    <span style="color: #cdcd00;">data</span> = pandas.merge(data,
-                        bafas[[u<span style="color: #00cd00;">'Individu.CodeAdherent'</span>, u<span style="color: #00cd00;">'DiplomesType.Libelle_bafa'</span>]],
-                        on=<span style="color: #00cd00;">'Individu.CodeAdherent'</span>, suffixes=[<span style="color: #00cd00;">''</span>, <span style="color: #00cd00;">''</span>], how=<span style="color: #00cd00;">'outer'</span>)\
-
-    for formation_name in [<span style="color: #00cd00;">'tech'</span>, <span style="color: #00cd00;">'appro'</span>, <span style="color: #00cd00;">'approA'</span>, <span style="color: #00cd00;">'apf'</span>]:
-        <span style="color: #cdcd00;">data</span> = pandas.merge(data,
-                            formations[formation_name][[u<span style="color: #00cd00;">'Individu.CodeAdherent'</span>, u<span style="color: #00cd00;">'FormationsType.Libelle_%s'</span> % formation_name]],
-                            on=<span style="color: #00cd00;">'Individu.CodeAdherent'</span>, suffixes=[<span style="color: #00cd00;">''</span>, <span style="color: #00cd00;">''</span>], how=<span style="color: #00cd00;">'outer'</span>)\
-
-    <span style="color: #cdcd00;">data</span> = pandas.merge(data,
-                         pandas.DataFrame([(k, v) for k,v in inscriptions.items() if not v == []],
-                                         columns=[u<span style="color: #00cd00;">'Individu.CodeAdherent'</span>, <span style="color: #00cd00;">'inscriptions'</span>]),
-                        on=<span style="color: #00cd00;">'Individu.CodeAdherent'</span>, suffixes=[<span style="color: #00cd00;">''</span>, <span style="color: #00cd00;">''</span>], how=<span style="color: #00cd00;">'outer'</span>)\
-
-    <span style="color: #cdcd00;">data</span> = data.merge(PACKS, on=u<span style="color: #00cd00;">'Structure.CodeStructure'</span>)\
-
-    <span style="color: #cdcd00;">data</span> = data.drop_duplicates(subset=[u<span style="color: #00cd00;">'Individu.CodeAdherent'</span>, u<span style="color: #00cd00;">'Individu.Nom'</span>, u<span style="color: #00cd00;">'Individu.Prenom'</span>,])\
-
-    return data
-</pre>
-</div>
-<p>
-Exemple : liste des champs accessibles après fusion
-</p>
-<div class="org-src-container">
-
-<pre class="src src-python"><span style="color: #cdcd00;">data</span> = fusion(chefs=chefs, bafas=bafas, formations=formations, inscriptions=inscriptions, qualifications=qualifications)
-
-print()
-print(data.keys ())
-print(<span style="color: #0000ee; font-weight: bold;">len</span>(data))
-</pre>
-</div>
-
-<pre class="example">
-... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... &gt;&gt;&gt; &gt;&gt;&gt; ()
-Index([u'IndividuCivilite.NomCourt', u'Individu.CodeAdherent', u'Individu.Nom', u'Individu.Prenom', u'Structure.CodeStructure', u'Structure.Nom', u'Fonction.Code', u'Fonction.CategorieMembre', u'Fonction.NomMasculin', u'Fonction.NomFeminin', u'Inscription.Delegations', u'Individu.NomJeuneFille', u'Individu.Adresse.Ligne1', u'Individu.Adresse.Ligne2', u'Individu.Adresse.Ligne3', u'Individu.Adresse.CodePostal', u'Individu.Adresse.Municipalite', u'Individu.Adresse.Pays', u'Individu.TelephoneDomicile', u'Individu.TelephonePortable1', u'Individu.TelephonePortable2', u'Individu.TelephoneBureau', u'Individu.Fax', u'Individu.CourrielPersonnel', u'Individu.CourrielProfessionnel', u'Individu.DateNaissance', u'Individu.LieuNaissance', u'IndividuPaysNaissance.PaysLib', u'Individu.Profession', u'Individu.NumeroAllocataire', u'Individu.RegimeCAF', u'Individu.RegimeMSA', u'Individu.RegimeMaritime', u'Individu.RegimeAutre', u'Individu.RegimeAllocataire', u'Individu.AutorisationInterventionChirurgicale', u'Individu.DroitImage', u'Individu.AssuranceResponsabiliteCivile', u'Individu.AutoriseMailInfoMouvement', u'Individu.AutoriseMailInfoExterne', u'Inscriptions.DateDebut', u'Inscriptions.DateFin', u'Inscriptions.Type', u'QualificationsQualificationJeunesseSports.Libelle_anim', u'QualificationsQualificationJeunesseSports.Libelle_dir', u'DiplomesType.Libelle_bafa', u'FormationsType.Libelle_tech', u'FormationsType.Libelle_appro', u'FormationsType.Libelle_approA', u'FormationsType.Libelle_apf', u'inscriptions', u'pack'], dtype='object')
-104
-</pre>
-</div>
-</div>
-<div id="outline-container-sec-2-8" class="outline-3">
-<h3 id="sec-2-8"><span class="section-number-3">2.8</span> unités</h3>
-<div class="outline-text-3" id="text-2-8">
-<div class="org-src-container">
-
-<pre class="src src-python"><span style="color: #cdcd00;">df</span> = groupes
-print(df[df[0].<span style="color: #0000ee; font-weight: bold;">str</span>.contains(<span style="color: #00cd00;">"406950700"</span>)][<span style="color: #0000ee; font-weight: bold;">range</span>(1,12)])
-</pre>
-</div>
-</div>
-</div>
-<div id="outline-container-sec-2-9" class="outline-3">
-<h3 id="sec-2-9"><span class="section-number-3">2.9</span> Affichage par unité</h3>
-<div class="outline-text-3" id="text-2-9">
-<p>
-Premier essai de représention des données en un tableau.
-</p>
-<div class="org-src-container">
-
-<pre class="src src-python" id="export">import time
-
-def <span style="color: #0000ee; font-weight: bold;">export_to_html</span>(data):
-    <span style="color: #cdcd00;">column_selection</span> = [u<span style="color: #00cd00;">'Individu.CodeAdherent'</span>, u<span style="color: #00cd00;">'Individu.Nom'</span>, u<span style="color: #00cd00;">'Individu.Prenom'</span>, u<span style="color: #00cd00;">'Structure.CodeStructure'</span>,
-                        u<span style="color: #00cd00;">'QualificationsQualificationJeunesseSports.Libelle_anim'</span>, <span style="color: #cdcd00;">#</span><span style="color: #cdcd00;">u'Qualifications.EstTitulaire_anim', u'Qualifications.DateFinValidite_anim',</span>
-                        u<span style="color: #00cd00;">'QualificationsQualificationJeunesseSports.Libelle_dir'</span>, <span style="color: #cdcd00;">#</span><span style="color: #cdcd00;">u'Qualifications.EstTitulaire_dir', u'Qualifications.DateFinValidite_dir',</span>
-                        u<span style="color: #00cd00;">'DiplomesType.Libelle_bafa'</span>,
-                        u<span style="color: #00cd00;">'FormationsType.Libelle_tech'</span>,
-                        u<span style="color: #00cd00;">'FormationsType.Libelle_approA'</span>,
-                        u<span style="color: #00cd00;">'FormationsType.Libelle_appro'</span>,
-                        u<span style="color: #00cd00;">'FormationsType.Libelle_apf'</span>,
-                        <span style="color: #00cd00;">'inscriptions'</span>,
-                    ]\
-
-    <span style="color: #cdcd00;">html_string</span> = <span style="color: #00cd00;">""</span>
-    <span style="color: #cdcd00;">html_string</span> += <span style="color: #00cd00;">"""&lt;html&gt;</span>
-<span style="color: #00cd00;">    &lt;head&gt;&lt;link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap.min.css"&gt;&lt;/head&gt;</span>
-<span style="color: #00cd00;">    &lt;body&gt;</span>
-<span style="color: #00cd00;">        &lt;div class="alert alert-info"&gt;donnees du %s&lt;/div&gt;</span>
-<span style="color: #00cd00;">"""</span> % (time.strftime(<span style="color: #00cd00;">"%d/%m/%Y %H:%M:%S"</span>))\
-
-    def <span style="color: #0000ee; font-weight: bold;">label_formatter</span>(color):
-        def <span style="color: #0000ee; font-weight: bold;">mformatter</span>(x):
-            return <span style="color: #00cd00;">"&lt;button class='btn btn-xs btn-%s'&gt;%s&lt;/button&gt;"</span> % (
-                color,
-                x.tolist()[0]) if <span style="color: #0000ee; font-weight: bold;">isinstance</span>(x.tolist()[0], <span style="color: #0000ee; font-weight: bold;">basestring</span>) else <span style="color: #00cd00;">""</span>
-        return mformatter\
-
-    <span style="color: #cdcd00;">aggreg_dict</span> = {
-        u<span style="color: #00cd00;">'QualificationsQualificationJeunesseSports.Libelle_anim'</span> : {<span style="color: #00cd00;">'qualif'</span>: label_formatter(<span style="color: #00cd00;">"warning"</span>)},
-        <span style="color: #cdcd00;">#</span><span style="color: #cdcd00;">u'Qualifications.EstTitulaire_anim' : {'tit': lambda x: "&lt;span class='badge'&gt;titulaire&lt;/span&gt;" if 'Oui' in x.tolist() else ""},</span>
-        u<span style="color: #00cd00;">'QualificationsQualificationJeunesseSports.Libelle_dir'</span> : {<span style="color: #00cd00;">'qualif'</span>: label_formatter(<span style="color: #00cd00;">"danger"</span>)},
-        <span style="color: #cdcd00;">#</span><span style="color: #cdcd00;">u'Qualifications.EstTitulaire_dir' : {'tit': lambda x: "&lt;span class='badge'&gt;titulaire&lt;/span&gt;" if 'Oui' in x.tolist() else ""},</span>
-        u<span style="color: #00cd00;">'FormationsType.Libelle_apf'</span>    : {<span style="color: #00cd00;">'formation4'</span>: label_formatter(<span style="color: #00cd00;">"success"</span>)},
-        u<span style="color: #00cd00;">'FormationsType.Libelle_tech'</span>   : {<span style="color: #00cd00;">'formation1'</span>: label_formatter(<span style="color: #00cd00;">"success"</span>)},
-        u<span style="color: #00cd00;">'FormationsType.Libelle_approA'</span> : {<span style="color: #00cd00;">'formation2'</span>: label_formatter(<span style="color: #00cd00;">"success"</span>)},
-        u<span style="color: #00cd00;">'FormationsType.Libelle_appro'</span>  : {<span style="color: #00cd00;">'formation3'</span>: label_formatter(<span style="color: #00cd00;">"success"</span>)},
-        u<span style="color: #00cd00;">'DiplomesType.Libelle_bafa'</span>     : {<span style="color: #00cd00;">'diplome'</span>: label_formatter(<span style="color: #00cd00;">"warning"</span>)},
-        <span style="color: #cdcd00;">#</span><span style="color: #cdcd00;">'inscriptions'                   : {'formation3': lambda x: "%s" % x.tolist()},</span>
-        <span style="color: #00cd00;">'inscriptions'</span>                   : {<span style="color: #00cd00;">'formation3'</span>: lambda x: <span style="color: #00cd00;">"&lt;/br&gt;"</span>.join(
-            [<span style="color: #00cd00;">"&lt;button class='btn btn-xs btn-info' data-toggle='tooltip' data-placement='right' title='inscrit le %s'&gt;%s&lt;/button&gt;"</span> % (
-                <span style="color: #0000ee; font-weight: bold;">str</span>(f[0][1]), <span style="color: #0000ee; font-weight: bold;">str</span>(f[0][0].encode(<span style="color: #00cd00;">'utf-8'</span>))) for f in
-             [i for i in x.tolist() if <span style="color: #0000ee; font-weight: bold;">isinstance</span>(i, <span style="color: #0000ee; font-weight: bold;">list</span>)]
-         ])},
-    }\
-
-    pandas.set_option(<span style="color: #00cd00;">'display.max_colwidth'</span>, 999)
-    <span style="color: #cdcd00;">grouped</span> = data.groupby(<span style="color: #00cd00;">'Structure.Nom'</span>)
-    for name, group in grouped:
-        <span style="color: #cdcd00;">html_string</span> += <span style="color: #00cd00;">"&lt;h1&gt;"</span> + name + <span style="color: #00cd00;">"&lt;/h1&gt;"</span>
-        <span style="color: #cdcd00;">html_string</span> += group[column_selection].groupby([u<span style="color: #00cd00;">'Individu.CodeAdherent'</span>, u<span style="color: #00cd00;">'Individu.Nom'</span>, u<span style="color: #00cd00;">'Individu.Prenom'</span>]).agg(
-            aggreg_dict
-        )[aggreg_dict.keys()].to_html(header=<span style="color: #cd00cd;">False</span>, na_rep=<span style="color: #00cd00;">""</span>, classes=<span style="color: #00cd00;">""</span>, escape=<span style="color: #cd00cd;">False</span>) \
-
-    <span style="color: #cdcd00;">html_string</span> += <span style="color: #00cd00;">"""&lt;/body&gt;</span>
-<span style="color: #00cd00;">    &lt;/html&gt;"""</span>\
-
-    return html_string
-</pre>
-</div>
-
-<p>
-<a href="file:///home/moustik/tmp/chefs.html">file:///home/moustik/tmp/chefs.html</a>
+<a href="http://docs.mongodb.org/ecosystem/tutorial/write-a-tumblelog-application-with-flask-mongoengine/">http://docs.mongodb.org/ecosystem/tutorial/write-a-tumblelog-application-with-flask-mongoengine/</a>
 </p>
 </div>
-</div>
-
-
-<div id="outline-container-sec-2-10" class="outline-3">
-<h3 id="sec-2-10"><span class="section-number-3">2.10</span> Affichage par Pack</h3>
-<div class="outline-text-3" id="text-2-10">
-<p>
-La base est représentée en utilisant Bootstrap
-</p>
-
-<p>
-Objectifs :
-</p>
-<ul class="org-ul">
-<li>Pour chaque pack
 </li>
-<li>pour chaque unite
-</li>
-<li>afficher les chefs
-<ul class="org-ul">
-<li>qualifications
-</li>
-<li>diplomes
-</li>
-<li>inscriptions
-</li>
-</ul>
-</li>
-</ul>
-
+<li>deploiement<br  /><div class="outline-text-5" id="text-1-1-2-2">
 <div class="org-src-container">
 
-<pre class="src src-python" id="export_viz">def <span style="color: #0000ee; font-weight: bold;">export_viz</span>(data, groupes):
-    <span style="color: #cdcd00;">html_string</span> = <span style="color: #00cd00;">""</span>
-    <span style="color: #cdcd00;">html_string</span> += <span style="color: #00cd00;">"""&lt;html&gt;</span>
-<span style="color: #00cd00;">    &lt;head&gt;&lt;link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap.min.css"&gt;&lt;/head&gt;</span>
-<span style="color: #00cd00;">    &lt;body&gt;</span>
-<span style="color: #00cd00;">        &lt;script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"&gt;&lt;/script&gt;</span>
-<span style="color: #00cd00;">        &lt;script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/js/bootstrap.min.js"&gt;&lt;/script&gt;</span>
-<span style="color: #00cd00;">        &lt;div class="alert alert-info"&gt;donnees du %s&lt;/div&gt;</span>
-<span style="color: #00cd00;">"""</span> % (time.strftime(<span style="color: #00cd00;">"%d/%m/%Y %H:%M:%S"</span>))\
+<pre class="src src-sh">git clone https://github.com/moustik/appis.git appis
+python appis/front/main.py
+</pre>
+</div>
+</div>
+</li></ol>
+</div>
+</div>
+<div id="outline-container-sec-1-2" class="outline-3">
+<h3 id="sec-1-2"><span class="section-number-3">1.2</span> Scraping automatisé</h3>
+<div class="outline-text-3" id="text-1-2">
+</div><div id="outline-container-sec-1-2-1" class="outline-4">
+<h4 id="sec-1-2-1"><span class="section-number-4">1.2.1</span> scrapy</h4>
+<div class="outline-text-4" id="text-1-2-1">
+<div class="org-src-container">
 
-    <span style="color: #cdcd00;">html_string</span> += <span style="color: #00cd00;">"&lt;div class='container-fluid'&gt;"</span>
-    <span style="color: #cdcd00;">data</span> = data.sort(<span style="color: #00cd00;">'Structure.CodeStructure'</span>)
-    for nom, group in data.groupby([<span style="color: #00cd00;">'pack'</span>, <span style="color: #00cd00;">'Structure.CodeStructure'</span>, <span style="color: #00cd00;">'Structure.Nom'</span>]):
-        <span style="color: #cdcd00;">qualifications_field</span> = [<span style="color: #00cd00;">"QualificationsQualificationJeunesseSports.Libelle_anim"</span>, <span style="color: #00cd00;">"QualificationsQualificationJeunesseSports.Libelle_dir"</span>]
-        (anim_count, dir_count) = group[qualifications_field].count()
-        <span style="color: #cdcd00;">chefs_count</span> = group[u<span style="color: #00cd00;">'Individu.CodeAdherent'</span>].count()
-        <span style="color: #cdcd00;">prets</span> = <span style="color: #00cd00;">"&lt;span class='badge progress-bar-success'&gt;&lt;span class='glyphicon glyphicon-ok'&gt;&lt;/span&gt;&lt;/span&gt;"</span> if ((dir_count &gt; 0) and (<span style="color: #0000ee; font-weight: bold;">float</span>(anim_count)/<span style="color: #0000ee; font-weight: bold;">float</span>(chefs_count) &gt;= 0.5)) else <span style="color: #00cd00;">"&lt;span class='badge progress-bar-danger'&gt;&lt;span class='glyphicon glyphicon-ban-circle'&gt;&lt;/span&gt;&lt;/span&gt;"</span>\
+<pre class="src src-sh">pip install requests lxml scrapy zope.interface
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-sec-1-2-2" class="outline-4">
+<h4 id="sec-1-2-2"><span class="section-number-4">1.2.2</span> mongoDB</h4>
+<div class="outline-text-4" id="text-1-2-2">
+<div class="org-src-container">
 
-        <span style="color: #cdcd00;">structureID</span> = group.iloc[0][<span style="color: #00cd00;">'Structure.CodeStructure'</span>]
-        <span style="color: #cdcd00;">effectifs</span> = groupes[groupes[0].<span style="color: #0000ee; font-weight: bold;">str</span>.contains(<span style="color: #0000ee; font-weight: bold;">str</span>(<span style="color: #0000ee; font-weight: bold;">int</span>(structureID)))][<span style="color: #0000ee; font-weight: bold;">range</span>(4,7)].values.tolist()[0]
-        \
-        <span style="color: #cdcd00;">html_string</span> += <span style="color: #00cd00;">"""</span>
-<span style="color: #00cd00;">    &lt;ul class='list-group'&gt;</span>
-<span style="color: #00cd00;">        &lt;li class='list-group-item'&gt;&lt;b class='list-group-heading'&gt;PACK %s&lt;/b&gt; %s &lt;span class='badge'&gt;G %s - F %s - &amp;sum; %s&lt;/span&gt;&lt;/li&gt;</span>
-<span style="color: #00cd00;">"""</span> % (<span style="color: #00cd00;">" - "</span>.join([nom[0], nom[2]]), prets, effectifs[0], effectifs[1], effectifs[2])
-        for index, chef in group.sort([<span style="color: #00cd00;">"Fonction.Code"</span>]).iterrows():
-            if pandas.isnull(chef[<span style="color: #00cd00;">"Individu.CodeAdherent"</span>]):
-                continue
-            <span style="color: #cdcd00;">qualifications_html</span> = <span style="color: #00cd00;">"&lt;p&gt;"</span>
-            for qualifications_field in [<span style="color: #00cd00;">"QualificationsQualificationJeunesseSports.Libelle_anim"</span>, <span style="color: #00cd00;">"QualificationsQualificationJeunesseSports.Libelle_dir"</span>]:
-                <span style="color: #cdcd00;">color</span> = <span style="color: #00cd00;">"warning"</span> if qualifications_field == <span style="color: #00cd00;">"QualificationsQualificationJeunesseSports.Libelle_anim"</span> else <span style="color: #00cd00;">"danger"</span>
-                qualifications_html += <span style="color: #00cd00;">""</span> if pandas.isnull(chef[qualifications_field]) else <span style="color: #00cd00;">"&lt;big&gt;&lt;span class='label label-%s' style='display: inline-block'&gt;%s&lt;/span&gt;&lt;/big&gt; "</span> % (color, <span style="color: #00cd00;">" "</span>.join(chef[qualifications_field].split(<span style="color: #00cd00;">' '</span>)[0:2]))
-            qualifications_html += <span style="color: #00cd00;">"&lt;/p&gt;"</span>\
+<pre class="src src-sh">sudo apt-key adv --keyserver keyserver.ubuntu.com --recv 7F0CEB10
+<span style="color: #0000ee; font-weight: bold;">echo</span> <span style="color: #00cd00;">"deb http://repo.mongodb.org/apt/debian wheezy/mongodb-org/3.0 main"</span> | sudo tee /etc/apt/sources.list.d/mongodb-org-3.0.list
+sudo apt-get update
+sudo apt-get install -y mongodb-org
 
-            formations_html = <span style="color: #00cd00;">""</span>
-            for formation_field in [<span style="color: #00cd00;">"FormationsType.Libelle_apf"</span>, <span style="color: #00cd00;">"FormationsType.Libelle_tech"</span>, <span style="color: #00cd00;">"FormationsType.Libelle_appro"</span>, <span style="color: #00cd00;">"FormationsType.Libelle_approA"</span>, <span style="color: #00cd00;">"DiplomesType.Libelle_bafa"</span>]:
-                color = <span style="color: #00cd00;">"success"</span> if formation_field == <span style="color: #00cd00;">"DiplomesType.Libelle_bafa"</span> else <span style="color: #00cd00;">"success"</span>
-                formations_html += <span style="color: #00cd00;">""</span> if pandas.isnull(chef[formation_field]) else <span style="color: #00cd00;">"&lt;div class='progress-bar progress-bar-%s' style='width: 35%%'&gt;%s&lt;/div&gt;"</span> % (color, chef[formation_field].split(<span style="color: #00cd00;">' '</span>)[0])\
+<span style="color: #cdcd00;"># </span><span style="color: #cdcd00;">fix ovh kernel bug</span>
+sudo groupadd sysfs
+sudo usermod -G sysfs mongodb
+sudo chgrp sysfs /sys/devices/system/node
+sudo chgrp sysfs /sys/dev/block/
+sudo chgrp sysfs /sys/devices/virtual/block/md1/queue
+sudo chmod g+rx /sys/devices/system/node
+sudo chmod g+rx /sys/dev/block/
+sudo chmod g+rx /sys/devices/virtual/block/md1/queue
 
-            inscriptions_html = <span style="color: #00cd00;">"Aucune"</span>
-            if <span style="color: #0000ee; font-weight: bold;">isinstance</span>(chef[<span style="color: #00cd00;">"inscriptions"</span>], <span style="color: #0000ee; font-weight: bold;">list</span>):
-                inscriptions_html = pandas.DataFrame(chef[<span style="color: #00cd00;">"inscriptions"</span>], columns=[<span style="color: #00cd00;">'nom'</span>, <span style="color: #00cd00;">'date'</span>]).to_html(header=<span style="color: #cd00cd;">False</span>, na_rep=<span style="color: #00cd00;">""</span>, classes=<span style="color: #00cd00;">"table table-condensed"</span>, escape=<span style="color: #cd00cd;">False</span>)\
-
-            badges_html = <span style="color: #00cd00;">"""    &lt;div class='row'&gt;</span>
-<span style="color: #00cd00;">                            &lt;div class='col-xs-4 col-md-4'&gt;</span>
-<span style="color: #00cd00;">                                &lt;label&gt;&lt;span class='more-%d collapse'&gt;Qualifications&lt;/span&gt;&lt;/label&gt;</span>
-<span style="color: #00cd00;">                                %s</span>
-<span style="color: #00cd00;">                            &lt;/div&gt;</span>
-<span style="color: #00cd00;">                            &lt;div class='col-xs-8 col-md-8'&gt;</span>
-<span style="color: #00cd00;">                                &lt;label&gt;&lt;span class='more-%d collapse'&gt;Formations&lt;/span&gt;&lt;/label&gt;</span>
-<span style="color: #00cd00;">                                &lt;div class="progress progress-striped active" style='margin-bottom: 2px;'&gt;%s&lt;/div&gt;</span>
-<span style="color: #00cd00;">                            &lt;/div&gt;</span>
-<span style="color: #00cd00;">                        &lt;/div&gt;</span>
-<span style="color: #00cd00;">                        &lt;div class='row'&gt;</span>
-<span style="color: #00cd00;">                            &lt;div class='col-xs-4 col-md-4'&gt;</span>
-<span style="color: #00cd00;">                            &lt;/div&gt;</span>
-<span style="color: #00cd00;">                            &lt;div class='col-xs-8 col-md-8 more-%d collapse'&gt;</span>
-<span style="color: #00cd00;">                                &lt;label style='display: block'&gt;Inscriptions&lt;/label&gt;</span>
-<span style="color: #00cd00;">                                %s</span>
-<span style="color: #00cd00;">                            &lt;/div&gt;</span>
-<span style="color: #00cd00;">                        &lt;/div&gt;</span>
-<span style="color: #00cd00;">    """</span>     % (
-                <span style="color: #0000ee; font-weight: bold;">int</span>(chef[<span style="color: #00cd00;">"Individu.CodeAdherent"</span>]), qualifications_html, <span style="color: #0000ee; font-weight: bold;">int</span>(chef[<span style="color: #00cd00;">"Individu.CodeAdherent"</span>]),
-                formations_html, <span style="color: #0000ee; font-weight: bold;">int</span>(chef[<span style="color: #00cd00;">"Individu.CodeAdherent"</span>]), inscriptions_html)\
-
-            html_string += <span style="color: #00cd00;">"""</span>
-<span style="color: #00cd00;">        &lt;li class='list-group-item chef' style="padding-top: 0px; padding-bottom: 0px;" id="%d"&gt;</span>
-<span style="color: #00cd00;">            &lt;div class=''&gt;</span>
-<span style="color: #00cd00;">                &lt;div class='row'&gt;</span>
-<span style="color: #00cd00;">                    &lt;div class='col-xs-3 col-md-3'&gt;</span>
-<span style="color: #00cd00;">                        &lt;h5&gt;&lt;a data-toggle="collapse" data-target=".more-%d"&gt;%s %s&lt;/a&gt;&lt;/h5&gt;</span>
-<span style="color: #00cd00;">                    &lt;/div&gt;</span>
-<span style="color: #00cd00;">                    &lt;div class='col-xs-9 col-md-9'&gt;</span>
-<span style="color: #00cd00;">                    %s</span>
-<span style="color: #00cd00;">                    &lt;/div&gt;</span>
-<span style="color: #00cd00;">                &lt;/div&gt;</span>
-<span style="color: #00cd00;">            &lt;/div&gt;</span>
-<span style="color: #00cd00;">        &lt;/li&gt;</span>
-<span style="color: #00cd00;">    """</span>     % (
-                <span style="color: #0000ee; font-weight: bold;">int</span>(chef[<span style="color: #00cd00;">"Individu.CodeAdherent"</span>]), <span style="color: #0000ee; font-weight: bold;">int</span>(chef[<span style="color: #00cd00;">"Individu.CodeAdherent"</span>]),
-                chef[<span style="color: #00cd00;">"Individu.Nom"</span>], chef[<span style="color: #00cd00;">"Individu.Prenom"</span>],
-                badges_html
-            )
-        html_string += <span style="color: #00cd00;">"&lt;/ul&gt;"</span>\
-
-    html_string += <span style="color: #00cd00;">"&lt;/div&gt;"</span>
-    html_string += <span style="color: #00cd00;">"""&lt;/body&gt;</span>
-<span style="color: #00cd00;">    &lt;/html&gt;"""</span>\
-
-    return html_string
+sudo chgrp sysfs /sys/dev/block/8:1/
+sudo chmod g+rx /sys/dev/block/8:1/
+sudo chgrp sysfs /sys/kernel/mm/
+sudo chmod g+rx /sys/kernel/mm/
+sudo chgrp sysfs
+sudo chmod g+rx
 </pre>
 </div>
 
-<p>
-<a href="file:///home/moustik/tmp/chefs.html">file:///home/moustik/tmp/chefs.html</a>
-</p>
-</div>
-</div>
-<div id="outline-container-sec-2-11" class="outline-3">
-<h3 id="sec-2-11"><span class="section-number-3">2.11</span> script de mise à jour</h3>
-<div class="outline-text-3" id="text-2-11">
-<p>
-Le script suivant est utilisé sur ma machine pour regénérer les données
-</p>
 <div class="org-src-container">
 
-<pre class="src src-python">import os, math
-
-from appis import *
-
-<span style="color: #cdcd00;">s</span> = requests.session()
-init_session(s, login, password)
-
-<span style="color: #cdcd00;">VIEWSTATE</span> = get_viewstate(s, EFFECTIF_URL)
-<span style="color: #cdcd00;">groupes</span> = extraire_groupes(s, VIEWSTATE)
-
-for codes_chefs in [<span style="color: #00cd00;">"21*"</span>, <span style="color: #00cd00;">"22*"</span>, <span style="color: #00cd00;">"23*"</span>, <span style="color: #00cd00;">"24*"</span>]:
-    <span style="color: #cdcd00;">VIEWSTATE</span> = get_viewstate(s, EXTRACT_URL)
-    <span style="color: #cdcd00;">chefs</span> = extraire_chefs(s, VIEWSTATE, codes_chefs)
-
-    <span style="color: #cdcd00;">qualifications</span> = {}
-    <span style="color: #cdcd00;">qualifications</span>[<span style="color: #00cd00;">'anim'</span>] = extraire_qualifs(s, VIEWSTATE, codes_chefs, <span style="color: #00cd00;">"anim"</span>)
-    <span style="color: #cdcd00;">qualifications</span>[<span style="color: #00cd00;">'dir'</span>] = extraire_qualifs(s, VIEWSTATE, codes_chefs, <span style="color: #00cd00;">"dir"</span>)
-
-    <span style="color: #cdcd00;">bafas</span> = extraire_diplomes(s, VIEWSTATE, codes_chefs, <span style="color: #00cd00;">"bafa"</span>)
-
-    <span style="color: #cdcd00;">formations</span> = {}
-    <span style="color: #cdcd00;">formations_input</span> = [<span style="color: #00cd00;">'tech'</span>, <span style="color: #00cd00;">'appro'</span>, <span style="color: #00cd00;">'approA'</span>, <span style="color: #00cd00;">'apf'</span>]
-    for formation_name in formations_input:
-        <span style="color: #cdcd00;">formations</span>[formation_name] = extraire_formations(s, VIEWSTATE, codes_chefs, formation_name)
-
-    <span style="color: #cdcd00;">inscriptions</span> = {}
-    <span style="color: #cdcd00;">cache_keys</span> = inscriptions.keys()
-    for num_adherent in chefs[u<span style="color: #00cd00;">'Individu.CodeAdherent'</span>]:
-        if not math.isnan(num_adherent) and <span style="color: #0000ee; font-weight: bold;">int</span>(num_adherent) not in cache_keys:
-             <span style="color: #cdcd00;">inscriptions</span>[<span style="color: #0000ee; font-weight: bold;">int</span>(num_adherent)] = get_adherent(s, num_adherent)
-
-    <span style="color: #cdcd00;">data</span> = fusion(chefs=chefs, bafas=bafas, formations=formations, qualifications=qualifications, inscriptions=inscriptions)
-
-    with <span style="color: #0000ee; font-weight: bold;">open</span>(os.path.join(<span style="color: #00cd00;">"/home/moustik/tmp/"</span>, <span style="color: #00cd00;">"chefs_%s2.html"</span> % (COULEURS[codes_chefs])), <span style="color: #00cd00;">'w'</span>) as html_file:
-        html_file.write(export_viz(data, groupes).encode(<span style="color: #00cd00;">'utf-8'</span>))
+<pre class="src src-sh">pip install pymongo
 </pre>
+</div>
+</div>
+</div>
+<div id="outline-container-sec-1-2-3" class="outline-4">
+<h4 id="sec-1-2-3"><span class="section-number-4">1.2.3</span> run it</h4>
+<div class="outline-text-4" id="text-1-2-3">
+<div class="org-src-container">
+
+<pre class="src src-sh">git clone https://github.com/moustik/appis.git appis
+<span style="color: #0000ee; font-weight: bold;">cd</span> appis/scrap
+scrapy crawl intranet -s <span style="color: #cdcd00;">SGDFLOGIN</span>=numero_adherent -s <span style="color: #cdcd00;">SGDFPASS</span>=pass
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-sec-1-2-4" class="outline-4">
+<h4 id="sec-1-2-4"><span class="section-number-4">1.2.4</span> code</h4>
+<div class="outline-text-4" id="text-1-2-4">
+<p>
+@see <a href="https://github.com/moustik/appis">https://github.com/moustik/appis</a>
+</p>
 </div>
 </div>
 </div>
@@ -1233,7 +468,7 @@ for codes_chefs in [<span style="color: #00cd00;">"21*"</span>, <span style="col
 </div>
 <div id="postamble" class="status">
 <p class="author">Author: moustik</p>
-<p class="date">Created: 2015-04-09 Thu 17:54</p>
+<p class="date">Created: 2015-08-27 Thu 14:58</p>
 <p class="creator"><a href="http://www.gnu.org/software/emacs/">Emacs</a> 24.3.1 (<a href="http://orgmode.org">Org</a> mode 8.2.2)</p>
 <p class="validation"><a href="http://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
