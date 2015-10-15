@@ -2,25 +2,37 @@
 {% block content %}
 
 {% for structure in structures %}
-  {% if "00" in structure._id|string() %}
+  {% if "00" in structure.id|string() %}
   </div>
   <div class="list-group">
-    <a class="list-group-item active" href='/structure/{{structure._id}}'>{{ structure.name }}</a>
+    <a class="list-group-item active" href='/structure/{{structure.id}}'>
+      <div class="row">
+        <span class="col-xs-8 col-sm-4">{{ structure.name }}</span>
+        <span class="col-xs-4 col-sm-2"><span class="glyphicon glyphicon-user"></span> H/F {{ structure.headcount[0] }} / {{ structure.headcount[1] }}</span>
+      </div>
+    </a>
   {% else %}
-    {% if ((structure._id // 10) % 10) == 1 %}
+    {% if ((structure.id // 10) % 10) == 1 %}
 <!--
-    <a class="list-group-item" href='/structure/{{structure._id}}' style="background-color: #FFE3AD">{{ structure.name }}</a>
+    <a class="list-group-item" href='/structure/{{structure.id}}' style="background-color: #FFE3AD">{{ structure.name }}</a>
 -->
-    <a class="list-group-item list-group-item-warning" href='/structure/{{structure._id}}'>{{ structure.name }}</a>
-    {% elif ((structure._id // 10) % 10) == 2 %}
-    <a class="list-group-item list-group-item-info" href='/structure/{{structure._id}}'>{{ structure.name }}</a>
-    {% elif ((structure._id // 10) % 10) == 3 %}
-    <a class="list-group-item list-group-item-danger" href='/structure/{{structure._id}}'>{{ structure.name }}</a>
-    {% elif ((structure._id // 10) % 10) == 4 %}
-    <a class="list-group-item list-group-item-success" href='/structure/{{structure._id}}'>{{ structure.name }}</a>
+    <a class="list-group-item list-group-item-warning"
+    {% elif ((structure.id // 10) % 10) == 2 %}
+    <a class="list-group-item list-group-item-info"
+    {% elif ((structure.id // 10) % 10) == 3 %}
+    <a class="list-group-item list-group-item-danger"
+    {% elif ((structure.id // 10) % 10) == 4 %}
+    <a class="list-group-item list-group-item-success"
     {% else %}
-    <a class="list-group-item" href='/structure/{{structure._id}}'>{{ structure.name }}</a>
+    <a class="list-group-item"
     {% endif %}
+        href='/structure/{{structure.id}}'>
+         <div class="row">
+            <span class="col-xs-8 col-sm-4">{{ structure.name }}</span>
+            <span class="col-xs-2 col-sm-2 col-md-1"><span class="glyphicon glyphicon-user"></span> {{ structure.headcount[0] }} / {{ structure.headcount[1] }}</span>
+            <span class="col-xs-2 col-sm-2 col-md-1"><span class="glyphicon glyphicon-user"></span> {{ structure.headcount[3] }} / {{ structure.headcount[4] }}</span>
+         </div>
+    </a>
   {% endif %}
 {% endfor %}
 {% endblock %}

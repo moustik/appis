@@ -11,7 +11,7 @@ import scrapy
 class Member(scrapy.Item):
     def get_collection_name(self): return "members"
 
-    _id = scrapy.Field()
+    id = scrapy.Field()
     nom = scrapy.Field()
     prenom = scrapy.Field()
     nom_de_jeune_fille = scrapy.Field()
@@ -34,7 +34,7 @@ class Member(scrapy.Item):
 class Structure(scrapy.Item):
     def get_collection_name(self): return "structures"
 
-    _id = scrapy.Field()
+    id = scrapy.Field()
     name = scrapy.Field()
     parent = scrapy.Field()
     headcount = scrapy.Field()
@@ -92,6 +92,6 @@ class Qualification(scrapy.Item):
 class Fonction(scrapy.Item):
     def get_collection_name(self): return "fonctions"
 
-    _id = scrapy.Field()
+    id = scrapy.Field()
     name = scrapy.Field()
     category = scrapy.Field()

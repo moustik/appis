@@ -5,6 +5,8 @@
 # Don't forget to add your pipeline to the ITEM_PIPELINES setting
 # See: http://doc.scrapy.org/en/latest/topics/item-pipeline.html
 
+from datetime import datetime
+
 
 class ScrapPipeline(object):
     def process_item(self, item, spider):
@@ -36,12 +38,24 @@ class MongoPipeline(object):
         self.client.close()
 
     def process_item(self, item, spider):
-        try:
-            self.db[item.get_collection_name()].insert(dict(item))
-        except pymongo.errors.DuplicateKeyError:
-            if "_id" in dict(item).keys():
-                self.db[item.get_collection_name()].update(
-                    { "_id": item["_id"]},
-                    { "$set": dict(item) }
-                )
+        # http://docs.mongodb.org/manual/reference/operator/update/setOnInsert/
+#        if item.get_collection_name() == "members":
+#            try:
+#                self.db[item.get_collection_name()].insert(dict(item))
+#            except pymongo.errors.DuplicateKeyError:
+#                if "id" in dict(item).keys():
+#                    self.db[item.get_collection_name()].update(
+#                        { "id": item["id"]},
+#                        { "$set": dict(item) }
+#                    )
+#        else:
+        self.db[item.get_collection_name()].update(
+                dict(item),
+                {
+                    "$set": dict(item),
+                    "$setOnInsert": { "timestamp": datetime.now() }
+                },
+                upsert=True
+            )
+
         return item

@@ -1,3 +1,5 @@
+import re
+
 from flask import Flask
 from flask import make_response
 
@@ -23,7 +25,7 @@ def safe_get_first(cursor):
 
 @app.route('/')
 def home_page():
-    members = mongo.db.members.find({'_id': 150721942})
+    members = mongo.db.members.find({'id': 150721942})
     members = mongo.db.members.find().sort([("nom", 1), ("prenom", 1)])
 
     # pivot on member id
@@ -62,15 +64,15 @@ def home_page():
 @app.route('/member/<_id>')
 def member_page(_id=None):
     print(_id)
-    member = mongo.db.members.find({'_id': int(_id)})
+    member = mongo.db.members.find({'id': int(_id)})
     if member.count():
         member = member[0]
     else:
         member = None
 
     inscription = safe_get_first(mongo.db.inscriptions.find({'member_id': int(_id)}))
-    structure = safe_get_first(mongo.db.structures.find({'_id': member["structure"]}))
-    fonction = safe_get_first(mongo.db.fonctions.find({'_id': member["fonction"]}))
+    structure = safe_get_first(mongo.db.structures.find({'id': member["structure"]}))
+    fonction = safe_get_first(mongo.db.fonctions.find({'id': member["fonction"]}))
     formations = mongo.db.formations.find({'member_id': int(_id)}).sort([('role', -1),('date', 1)])
     qualifications = mongo.db.qualifications.find({'member_id': int(_id)})
     diplomes = mongo.db.diplomes.find({'member_id': int(_id)})
@@ -91,10 +93,11 @@ def structure_index():
     structures.sort('_id', 1)
     return render_template('structures.html', title="Index des structures", structures=structures)
 
+
 @app.route('/structure/<structure>')
 def structure_page(structure=406950000):
     members = mongo.db.members.find({'structure': int(structure)}).sort([("prenom", 1), ("nom", 1)])
-    structures = mongo.db.structures.find({'_id': int(structure)})
+    structures = mongo.db.structures.find({'id': int(structure)})
     if structures.count():
         structure = structures[0] # first one actually
         title = structure["name"]
@@ -106,7 +109,7 @@ def structure_page(structure=406950000):
     # pivot on member id
     formations = mongo.db.formations.aggregate([
         {"$match": {
-            "member_id": { "$in": map(lambda m: m['_id'], members)},
+            "member_id": { "$in": map(lambda m: m['id'], members)},
             "role": "Stagiaire"}},
         {"$group": {"_id": "$member_id", "formations": { "$push":
                                                          {"name": "$$ROOT.name",
@@ -121,7 +124,7 @@ def structure_page(structure=406950000):
     members.rewind()
     # pivot on member id
     diplomes = mongo.db.diplomes.aggregate([
-        {"$match": {"member_id": { "$in": map(lambda m: m['_id'], members)}}},
+        {"$match": {"member_id": { "$in": map(lambda m: m['id'], members)}}},
         {"$group": {"_id": "$member_id", "diplomes": { "$push": {"name": "$$ROOT.name", "date": "$$ROOT.date"}}}}
     ])
     # make it a dict
@@ -130,7 +133,7 @@ def structure_page(structure=406950000):
     members.rewind()
     # pivot on member id
     qualifications = mongo.db.qualifications.aggregate([
-        {"$match": {"member_id": { "$in": map(lambda m: m['_id'], members)}}},
+        {"$match": {"member_id": { "$in": map(lambda m: m['id'], members)}}},
         {"$group": {"_id": "$member_id", "qualifications": { "$push": {"name": "$$ROOT.name", "titular": "$$ROOT.titular"}}}}
     ])
     # make it a dict
@@ -138,7 +141,7 @@ def structure_page(structure=406950000):
 
     members.rewind()
     # pivot on member id
-    inscriptions = mongo.db.inscriptions.find({"member_id": { "$in": map(lambda m: m['_id'], members)}})
+    inscriptions = mongo.db.inscriptions.find({"member_id": { "$in": map(lambda m: m['id'], members)}})
     inscriptions = dict(map(lambda i: (i['member_id'], {"inscription_type": i["inscription_type"]}), inscriptions))
 
     members.rewind()
@@ -150,8 +153,6 @@ def structure_page(structure=406950000):
                            inscriptions=inscriptions,
     )
 
-
-import re
 
 def parse_and_set_type(s):
     (t, v) = s.split(":")
@@ -173,41 +174,39 @@ def request(fmt, req):
     # request in member collection
     final_req = dict(request_dict.pop("members")) if "members" in request_dict  else {}
 
-    # filter out member's _id upon data from other collections
+    # filter out member's id upon data from other collections
     it = request_dict.iteritems()
     filtered = None # set(map(lambda m: m['member_id'], mongo.db[k].find(dict(v))))
     blacklist = set([])
     if(len(request_dict.keys())):
-#        (k, v) = it.next()
-#        print k
         for k, v in it:
             print v
             if k[0] == "!":
                 for cond in v:
                     blacklist = blacklist.union(set(map(lambda m: m['member_id'], mongo.db[k[1:]].find(dict([cond])))))
-#                blacklist = blacklist.union(set(map(lambda m: m['member_id'], mongo.db[k[1:]].find(dict(v)))))
+                blacklist = blacklist.union(set(map(lambda m: m['member_id'], mongo.db[k[1:]].find(dict(v)))))
             else:
                 if filtered:
                     filtered = filtered.intersection(set(map(lambda m: m['member_id'], mongo.db[k].find(dict(v)))))
                 else:
                     filtered = set(map(lambda m: m['member_id'], mongo.db[k].find(dict(v))))
 
-    final_req.update({"_id": { "$nin": list(blacklist)}})
+    final_req.update({"id": { "$nin": list(blacklist)}})
 
-    # update final request with matching members' _id
+    # update final request with matching members' id
     if filtered:
-        final_req["_id"]["$in"] = list(filtered)
+        final_req["id"]["$in"] = list(filtered)
 
-    print(final_req)
+#    print(final_req)
 
     members = mongo.db.members.find(final_req).sort([("prenom", 1), ("nom", 1)])
 
     # pivot on member id
     formations = mongo.db.formations.aggregate([
         {"$match": {
-            "member_id": { "$in": map(lambda m: m['_id'], members)},
+            "member_id": { "$in": map(lambda m: m['id'], members)},
             "role": "Stagiaire"}},
-        {"$group": {"_id": "$member_id", "formations": { "$push":
+        {"$group": {"id": "$member_id", "formations": { "$push":
                                                          {"name": "$$ROOT.name",
                                                           "role": "$$ROOT.role",
                                                           "date": "$$ROOT.date"}
@@ -215,33 +214,32 @@ def request(fmt, req):
                   }}
     ])
     # make it a dict
-    formations = dict(map(lambda i: (i['_id'], i['formations']), formations['result']))
-#    print(reduce(lambda s,i: s.union(set(i)), , set([])))
+    formations = dict(map(lambda i: (i['id'], i['formations']), formations['result']))
     formations_list = set([sub["name"] for item in formations.values() for sub in item])
 
     members.rewind()
     # pivot on member id
     diplomes = mongo.db.diplomes.aggregate([
-        {"$match": {"member_id": { "$in": map(lambda m: m['_id'], members)}}},
-        {"$group": {"_id": "$member_id", "diplomes": { "$push": {"name": "$$ROOT.name", "date": "$$ROOT.date"}}}}
+        {"$match": {"member_id": { "$in": map(lambda m: m['id'], members)}}},
+        {"$group": {"id": "$member_id", "diplomes": { "$push": {"name": "$$ROOT.name", "date": "$$ROOT.date"}}}}
     ])
     # make it a dict
-    diplomes = dict(map(lambda i: (i['_id'], i['diplomes']), diplomes['result']))
+    diplomes = dict(map(lambda i: (i['id'], i['diplomes']), diplomes['result']))
     diplomes_list = set([sub["name"] for item in diplomes.values() for sub in item])
 
     members.rewind()
     # pivot on member id
     qualifications = mongo.db.qualifications.aggregate([
-        {"$match": {"member_id": { "$in": map(lambda m: m['_id'], members)}}},
-        {"$group": {"_id": "$member_id", "qualifications": { "$push": {"name": "$$ROOT.name", "titular": "$$ROOT.titular"}}}}
+        {"$match": {"member_id": { "$in": map(lambda m: m['id'], members)}}},
+        {"$group": {"id": "$member_id", "qualifications": { "$push": {"name": "$$ROOT.name", "titular": "$$ROOT.titular"}}}}
     ])
     # make it a dict
-    qualifications = dict(map(lambda i: (i['_id'], i['qualifications']), qualifications['result']))
+    qualifications = dict(map(lambda i: (i['id'], i['qualifications']), qualifications['result']))
     qualifications_list = set([sub["name"] for item in qualifications.values() for sub in item])
 
     members.rewind()
     # pivot on member id
-    inscriptions = mongo.db.inscriptions.find({"member_id": { "$in": map(lambda m: m['_id'], members)}})
+    inscriptions = mongo.db.inscriptions.find({"member_id": { "$in": map(lambda m: m['id'], members)}})
     inscriptions = dict(map(lambda i: (i['member_id'], {"inscription_type": i["inscription_type"]}), inscriptions))
 
     members.rewind()
@@ -256,7 +254,7 @@ def request(fmt, req):
                                       diplomes_list=diplomes_list,
                                   ))
     if fmt == "csv":
-#        r.headers["Content-Disposition"] = "attachment; filename=export.csv"
+        r.headers["Content-Disposition"] = "attachment; filename=export.csv"
         r.headers["Content-type"] = "text/text"
     return r
 

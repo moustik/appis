@@ -104,23 +104,15 @@ class SGDFIntranetSpider(scrapy.Spider):
                 continue
             self.logger.warning("extracting %s" % member_id)
 
-            #for i in [1]:
-            #    yield scrapy.Request(MEMBER_URL + "?code=%s" % member_id,
-            #                         callback=self.parse_member)
-
-            structure = Structure(
-                _id=int(value(member_selector.xpath('td')[4])),
-                name=value(member_selector.xpath('td')[5]),
-            )
-            for i in [1]:
-                yield structure
-
-            member = Member(_id=int(member_id),
-                            structure=structure["_id"],
+            member = Member(id=int(member_id),
+                            structure=int(value(member_selector.xpath('td')[4])),
                             fonction=value(member_selector.xpath('td')[6]),
             )
+
             for i in [1]:
-                yield member
+                yield scrapy.Request(MEMBER_URL + "?code=%s" % member_id,
+                                     callback=self.parse_member,
+                                     meta={"member": member})
 
             inscription = Inscription(member_id=int(member_id),
                                       ends=value(member_selector.xpath('td')[41]),
