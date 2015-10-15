@@ -9,6 +9,7 @@ from scrap.items import *
 INTRANET_URL = "https://intranet.sgdf.fr"
 MEMBER_URL = "https://intranet.sgdf.fr/Specialisation/Sgdf/adherents/RechercherAdherent.aspx"
 EXTRACT_URL = "https://intranet.sgdf.fr/Specialisation/Sgdf/Adherents/ExtraireAdherents.aspx"
+HEADCOUNT_URL = "https://intranet.sgdf.fr/Specialisation/Sgdf/Pilotage/Adherents/EffectifTotalCategorieSexe.aspx"
 
 
 def clean_field_name(field_name):
@@ -37,9 +38,16 @@ class SGDFIntranetSpider(scrapy.Spider):
             self.logger.error("Could not log in")
         else:
             self.logger.warning("Logged in !")
-            return scrapy.FormRequest(
-                EXTRACT_URL,
-                callback=self.push_member_form)
+
+            for i in [1]:
+                yield scrapy.FormRequest(
+                    HEADCOUNT_URL,
+                    callback=self.push_headcount_form)
+
+            for i in [1]:
+                yield scrapy.FormRequest(
+                    EXTRACT_URL,
+                    callback=self.push_member_form)
 
 
     def push_member_form(self, response):
@@ -115,52 +123,101 @@ class SGDFIntranetSpider(scrapy.Spider):
                                      meta={"member": member})
 
             inscription = Inscription(member_id=int(member_id),
+                                      starts=value(member_selector.xpath('td')[40]),
                                       ends=value(member_selector.xpath('td')[41]),
                                       inscription_type=int(value(member_selector.xpath('td')[42])),
             )
             for i in [1]:
                 yield inscription
 
-            fonction = Fonction(_id=value(member_selector.xpath('td')[6]),
+            fonction = Fonction(id=value(member_selector.xpath('td')[6]),
                                 name=value(member_selector.xpath('td')[8]),
-                                category=value(member_selector.xpath('td')[7]),
+                                category=int(value(member_selector.xpath('td')[7])),
             )
             for i in [1]:
                 yield fonction
 
 
-    def parse_member(self, response):
-        _id = int(response.xpath('//*[@id="ctl00_ctl00_MainContent_DivsContent__resume__lblCodeAdherent"]/text()')[0].extract())
-        full_name = response.xpath('//*[@id="ctl00_ctl00__divTitre"]/text()')[0].extract().split(' ')[1:]
 
+
+    def parse_member(self, response):
 #        from scrapy.shell import inspect_response
 #        inspect_response(response, self)
-        item = Member(_id=_id, nom=full_name[0], prenom=full_name[1])
+        id = value(response.xpath('//*[@id="ctl00_ctl00_MainContent_TabsContent_TabContainerResumeAdherent__tabResume__resume__lblCodeAdherent"]'))
+        id = int(id) if id else -1
+        try:
+            full_name = response.xpath('//*[@id="ctl00_ctl00__divTitre"]/text()')[0].extract().split(' ')
+        except:
+            self.logger.error(response.request)
+            full_name = ["erreur", "erreur", "erreur"]
 
-        for row_selector in response.xpath('//*[@id="_divResume"]/table/tr')[1:-1]: # skip header and alloc CAF
+        if len(full_name):
+            full_name = full_name[1:]
+        else:
+            return
+
+
+        item = response.meta.get("member")
+        item["nom"] = full_name[0]
+        item["prenom"] = full_name[1]
+
+        for row_selector in response.xpath('//*[@id="ctl00_ctl00_MainContent_TabsContent_TabContainerResumeAdherent__tabResume"]/table/tr')[1:-1]: # skip header and alloc CAF
             label = row_selector.xpath('td[@class="label_fiche"]/text()')[0].extract()
             field = row_selector.xpath(
-                "*//*[starts-with(@id, 'ctl00_ctl00_MainContent_DivsContent__resume__modeleIndividu__')]/text()"
+                "*//*[starts-with(@id, 'ctl00_ctl00_MainContent_TabsContent_TabContainerResumeAdherent__tabResume__resume__modeleIndividu__')]/text()"
             ).extract()
 #            self.logger.warning((clean_field_name(label), field))
-            item[clean_field_name(label)] = field[0] if len(field) else None
+            try:
+                item[clean_field_name(label)] = field[0] if len(field) else None
+            except:
+                pass
 
-        for row_selector in response.xpath('//*[@id="ctl00_ctl00_MainContent_DivsContent__formations__gvDiplomes__gvDiplomes"]/tr')[1:]:
-            diplome = Diplome(member_id=_id)
+        for i in [1]:
+            yield scrapy.FormRequest.from_response(
+                response,
+                headers={
+                    "Accept": "*/*",
+                    "X-MicrosoftAjax": "Delta=true",
+                    "X-Requested-With": "XMLHttpRequest",
+                },
+                formdata={
+                    "ctl00$ctl00$ScriptManager1": "ctl00$ctl00$_upMainContent|ctl00$ctl00$MainContent$TabsContent$TabContainerResumeAdherent",
+                    "__EVENTTARGET": "ctl00$ctl00$MainContent$TabsContent$TabContainerResumeAdherent",
+                    "__EVENTARGUMENT:activeTabChanged": "5",
+                    "__ASYNCPOST": "true",
+                    "ctl00_ctl00_MainContent_TabsContent_TabContainerResumeAdherent_ClientState": '{"ActiveTabIndex":5,"TabState":[true,true,true,true,true,true,true,true,true,true]}',
+                },
+                callback=self.parse_member_formation_tab,
+                meta= {'id': id})
+
+        for i in [1]:
+            yield item
+
+
+
+    def parse_member_formation_tab(self, response):
+        id = response.meta.get("id")
+
+        for row_selector in response.xpath('//*[@id="ctl00_ctl00_MainContent_TabsContent_TabContainerResumeAdherent__tabFormations__formations__gvFormations__gvFormations"]/tr')[1:]:
+            formation = Formation(member_id=id)
+            formation["name"] = value(row_selector.xpath('td')[0])
+            formation["role"] = value(row_selector.xpath('td')[1])
+            formation["date"] = value(row_selector.xpath('td')[2])
+            yield formation
+
+        for row_selector in response.xpath('//*[@id="ctl00_ctl00_MainContent_TabsContent_TabContainerResumeAdherent__tabFormations__formations__gvDiplomes__gvDiplomes"]/tr')[1:]:
+            diplome = Diplome(member_id=id)
             diplome["name"] = value(row_selector.xpath('td')[0])
             diplome["date"] = value(row_selector.xpath('td')[2])
             yield diplome
 
-        for row_selector in response.xpath('//*[@id="ctl00_ctl00_MainContent_DivsContent__qualifications__gvQualifications__gvQualifications"]/tr')[1:]:
-            qualification = Qualification(member_id=_id)
+        for row_selector in response.xpath('//*[@id="ctl00_ctl00_MainContent_TabsContent_TabContainerResumeAdherent__tabFormations__qualifications__gvQualifications__gvQualifications"]/tr')[1:]:
+            qualification = Qualification(member_id=id)
             qualification["name"] = value(row_selector.xpath('td')[0]).strip()
             qualification["titular"] = value(row_selector.xpath('td')[1])
             qualification["obtained"] = value(row_selector.xpath('td')[2])
             qualification["expires"] = value(row_selector.xpath('td')[3])
             yield qualification
-
-        yield item
-
 
 
 # import cgi, pprint
@@ -192,3 +249,29 @@ class SGDFIntranetSpider(scrapy.Spider):
 #                'ctl00$MainContent$_recherche$_btnRecherche.y': '9',
 
 #           dont_click=True,
+
+
+    def push_headcount_form(self, response):
+        return scrapy.FormRequest.from_response(
+            response,
+            formdata={
+                'ctl00$ctl00$MainContent$EntreeContent$_entree$_pilotageEntree$_btnPopupStructure$_tbResult': '406950000 - TERRITOIRE LYON LEVANT',
+                'ctl00$ctl00$MainContent$EntreeContent$_entree$_pilotageEntree$_cbStructuresDetaillees': "on",
+                'ctl00$ctl00$MainContent$EntreeContent$_entree$_pilotageEntree$_ddSaison': "2016",
+                'ctl00$ctl00$MainContent$EntreeContent$_entree$_pilotageEntree$_ddHemisphere': "0",
+                'ctl00$ctl00$MainContent$EntreeContent$_entree$_ddTrancheAge': "-1",
+                "ctl00$ctl00$MainContent$_btnValider.x": "43",
+                "ctl00$ctl00$MainContent$_btnValider.y": "13",
+            },
+            callback=self.parse_headcount)
+
+
+    def parse_headcount(self, response):
+
+        for row_selector in response.xpath('//table[@id="ctl00_ctl00_MainContent_DivsContent__table__gvResult"]/tr')[2:-1]:
+            structure = Structure()
+            structure["id"] = int(value(row_selector.xpath('td')[0]).split(' - ')[0])
+            structure["name"] = value(row_selector.xpath('td')[0]).split(' - ')[1]
+            structure["headcount"] = [ int(value(row_selector.xpath('td')[i])) for i in range(1,13) ]
+            yield structure
+
