@@ -1,9 +1,11 @@
 import re
+from datetime import date
 
 from flask import Flask
 from flask import make_response
 
 import flask
+import flask.json
 
 # pip install Flask-PyMongo
 from flask.ext.pymongo import PyMongo
@@ -93,12 +95,15 @@ def home_page():
     )
 
 
-@app.route('/member/<_id>')
+import bson
+from bson import json_util
+
+@app.route('/data/member/<int:_id>')
+@app.route('/member/<int:_id>')
 def member_page(_id=None):
-    print(_id)
     member = mongo.db.members.find({'id': int(_id)})
     if member.count():
-        member = member[0]
+        member = member[member.count()-1]
     else:
         member = None
 
@@ -209,18 +214,19 @@ def structure_page(structure=406950000):
     # make it a dict
     qualifications = dict(map(lambda i: (i['_id'], i['qualifications']), qualifications['result']))
 
-    members.rewind()
+#    members.rewind()
     # pivot on member id
     inscriptions = mongo.db.inscriptions.find({"member_id": { "$in": map(lambda m: m['id'], members)}})
     inscriptions = dict(map(lambda i: (i['member_id'], {"inscription_type": i["inscription_type"]}), inscriptions))
 
-    members.rewind()
+#    members.rewind()
     return render_template('members.html', title=title,
                            members=members,
                            formations=formations,
                            qualifications=qualifications,
                            diplomes=diplomes,
                            inscriptions=inscriptions,
+                           is_structure=True,
     )
 
 
@@ -328,6 +334,103 @@ def request(fmt, req):
         r.headers["Content-type"] = "text/text"
     return r
 
+
+@app.route('/data/<structure>')
+def data_structure(structure):
+    structures = mongo.db.structures.find({"id": int(structure)}, {"_id": 0}).sort("timestamp")
+    structures = filter(lambda s: s["headcount"][0] > 6, structures)
+    return flask.json.jsonify({"res": list(structures)})
+
+
+@app.route('/data/', defaults={"structure": {"$exists" : True}})
+#@app.route('/data//members', defaults={"structure": {"$exists" : True}})
+@app.route('/data/<int:structure>/members')
+def data_structure_members(structure):
+    members = mongo.db.members.aggregate(
+        [
+            {"$match": {'structure': structure, "inscription_starts": { "$regex": ".*201[5678]"}}},
+            {"$sort": { "timestamp": -1 }},
+            {"$group": { "_id": "$id", "doc": { "$first": "$$ROOT" }}},
+            {"$project": MEMBER_PROJECTION},
+        ]
+    )
+    members = list(members["result"])
+    return flask.json.jsonify({"n": len(members), "result": members})
+
+
+def is_it_birthday(member, at=date.today()):
+    born = date(*map(int, reversed(member["date_de_naissance"].split("/"))))
+    return ((at.month, at.day) == (born.month, born.day))
+
+
+@app.route('/data/birthdays')
+@app.route('/view/birthdays')
+def data_birthdays():
+    members = mongo.db.members.aggregate(
+        [
+            {"$match": {
+                "inscription_starts": { "$regex": ".*201[5678]"},
+                                  }},
+            {"$sort": { "timestamp": -1 }},
+            {"$group": { "_id": "$id", "doc": { "$first": "$$ROOT" }}},
+            {"$project": MEMBER_PROJECTION},
+        ]
+    )
+
+#    fmembers = filter(lambda m: is_it_birthday(m, date(2131, 4, 17)), members["result"])
+    fmembers = filter(lambda m: is_it_birthday(m, date.today()), members["result"])
+
+    context = flask.request.path.split("/")[1]
+    if context == "view":
+        return render_template('members.html', title="Anniversaires",
+                               members=fmembers,
+                               formations=[],
+                               qualifications=[],
+                               diplomes=[],
+                               inscriptions=[],
+                           )
+    elif context == "data":
+        return flask.json.jsonify({"n": len(fmembers), "result": fmembers})
+
+
+def age_from_member(member, at=date.today()):
+    born = date(*map(int, reversed(member["date_de_naissance"].split("/"))))
+    return (at.year - born.year - ((at.month, at.day) < (born.month, born.day)))
+
+
+@app.route('/data/younglings')
+@app.route('/view/younglings')
+def data_younglings():
+    members = mongo.db.members.aggregate(
+        [
+            {"$match": {
+                "inscription_starts": { "$regex": ".*201[5678]"},
+#                "date_de_naissance": {"$gte": "ISODate('1998-01-01T00:00:00.0Z')"}
+                                  }},
+            {"$sort": { "timestamp": -1 }},
+            {"$group": { "_id": "$id", "doc": { "$first": "$$ROOT" }}},
+            {"$project": MEMBER_PROJECTION},
+        ]
+    )
+
+    fmembers = filter(lambda m: age_from_member(m, date(2016, 7, 1)) < 18, members["result"])
+
+    context = flask.request.path.split("/")[1]
+    if context == "view":
+        return render_template('members.html', title="Mineurs au 1er juillet 2016",
+                               members=fmembers,
+                               formations=[],
+                               qualifications=[],
+                               diplomes=[],
+                               inscriptions=[],
+                           )
+    elif context == "data":
+        return flask.json.jsonify({"n": len(fmembers), "result": fmembers})
+
+
+@app.route('/charts')
+def charts():
+    return render_template('charts/timeline.html')
 
 if __name__ == '__main__':
     app.run(host='127.0.0.1', port=8080, debug=True)

@@ -30,6 +30,10 @@ class Member(scrapy.Item):
     numero_allocataire = scrapy.Field()
     structure = scrapy.Field()
     fonction = scrapy.Field()
+    inscription_starts = scrapy.Field()
+    inscription_ends = scrapy.Field()
+    inscription_type = scrapy.Field()
+
 
 class Structure(scrapy.Item):
     def get_collection_name(self): return "structures"
@@ -44,6 +48,7 @@ class Inscription(scrapy.Item):
     def get_collection_name(self): return "inscriptions"
 
     member_id = scrapy.Field()
+    starts = scrapy.Field()
     ends = scrapy.Field()
     inscription_type = scrapy.Field()
 

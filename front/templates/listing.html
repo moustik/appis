@@ -27,8 +27,173 @@
 
 <h1>{{title}}</h1>
 
-<div class="pull-left">
-  {% if members.count() != 0 %}
+<svg class="chart" height="240"></svg>
+
+<style>
+
+.chart rect {
+  fill: steelblue;
+}
+
+.chart text {
+  fill: white;
+  font: 10px sans-serif;
+  text-anchor: middle;
+}
+
+.d3-tip {
+  line-height: 1;
+  font-weight: bold;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.8);
+  color: #fff;
+  border-radius: 2px;
+}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.js"></script>
+<script src="http://labratrevenge.com/d3-tip/javascripts/d3.tip.v0.6.3.js"></script>
+  {% if members|length != 0 and is_structure %}
+
+<script>
+var width = 300,
+    height = 200;
+
+var parseDate = d3.time.format("%a, %d %b %Y %H:%M:%S GMT").parse;
+var parseDate = d3.time.format("%d/%m/%Y").parse;
+
+var x = d3.scale.linear()
+    .range([0, width]);
+var y = d3.scale.linear()
+    .range([height, 0]);
+
+var chart = d3.select(".chart")
+    .attr("width", width)
+    .attr("height", height*1.2);
+
+var tip = d3.tip()
+  .attr('class', 'd3-tip')
+  .offset([100, 100])
+  .html(function(d) {
+    return d.values.length + ": <span style='color:orangered'>" + d.values.map(function(d) {return d.prenom;}) + "</span>";
+  });
+
+d3.json("/data/{{ members[0].structure }}/members", function getdata(error, data) {
+  data = data.result.map(type);
+  console.log(data);
+
+  ages = d3.nest()
+      .key(function(d) { return d.age; })
+      .entries(data);
+  ages0 = d3.nest()
+      .key(function(d) { return d.age0; })
+      .entries(data);
+
+  console.log(ages);
+  console.log(ages0);
+
+  max =   d3.max([
+                  d3.max(ages, function(d) { return +d.key; }),
+                  d3.max(ages0, function(d) { return +d.key; })]);
+  min =   d3.min([
+                  d3.min(ages, function(d) { return +d.key; }),
+                  d3.min(ages0, function(d) { return +d.key; })]);
+  x.domain([min, max]);
+
+  y.domain([0,  d3.max([
+                  d3.max(ages, function(d) { return d.values.length; }),
+                  d3.max(ages0, function(d) { return d.values.length; })])
+           ]);
+  var barWidth = .5*width / (max+1-min);
+  x.range([0, (width/2 - barWidth)]);
+
+
+  var bar0 = chart.selectAll("g")
+      .data(ages0)
+    .enter();
+
+  bar0.append("rect")
+      .data(ages0)
+      .attr("x", function(d) { return x(d.key); })
+      .attr("y", function(d) { return y(d.values.length); })
+      .attr("height", function(d) { return height - y(d.values.length); })
+      .attr("width", barWidth-1)
+      .style("fill", function(d) { if(d.key < 18) return "red"; })
+      .style("fill-opacity", 0.5)
+      .on('mouseover', tip.show)
+      .on('mouseout', tip.hide);
+  bar0.append("text")
+      .data(ages0)
+      .attr("x", function(d) { return x(d.key) + barWidth / 2; })
+      .attr("y", function(d) { return y(d.values.length) +3; })
+      .attr("dy", ".75em")
+      .style("font-weight", "bold")
+      .text(function(d) { return d.key; });
+
+  var bar = chart.selectAll("g")
+      .data(ages)
+    .enter()
+      .append("g")
+      .attr("transform", "translate(150, 0)");
+
+
+  bar.append("rect")
+      .attr("x", function(d) { return x(d.key); })
+      .attr("y", function(d) { return y(d.values.length); })
+      .attr("height", function(d) { return height - y(d.values.length); })
+      .attr("width", barWidth - 1)
+      .style("fill", function(d) { if(d.key < 18) return "red"; })
+      .on('mouseover', tip.show)
+      .on('mouseout', tip.hide);
+  bar.append("text")
+      .attr("x", function(d) { return x(d.key) + barWidth/2; })
+      .attr("y", function(d) { return y(d.values.length) +3; })
+      .attr("dy", ".75em")
+      .style("font-weight", "bold")
+      .text(function(d) { return d.key; });
+
+
+  chart.call(tip);
+
+  chart.append("text")
+      .attr("x", width / 2)
+      .attr("y", height* 1.18)
+      .style("fill", "black")
+      .style("font-size", 18)
+      .text("repartition des ages")
+  chart.append("text")
+      .attr("x", width / 4)
+      .attr("y", height* 1.075)
+      .style("fill", "black")
+      .style("font-size", 14)
+      .text("aujourd'hui")
+  chart.append("text")
+      .attr("x", 3*width / 4)
+      .attr("y", height* 1.075)
+      .style("fill", "black")
+      .style("font-size", 14)
+      .text("au 1/7/2016")
+  chart.append("line")
+      .attr("x1", width/2-1)
+      .attr("y1", 0)
+      .attr("x2", width/2-1)
+      .attr("y2", height*1.08)
+      .style("stroke-width", 2)
+      .style("stroke", "black")
+      .style("fill", "none");
+  });
+
+function type(d) {
+  d.age = Math.floor(((new Date("2016/7/1")) - parseDate(d.date_de_naissance))/(1000*60*60*24*365));
+  d.age0 = Math.floor(((new Date()) - parseDate(d.date_de_naissance))/(1000*60*60*24*365));
+  return d;
+}
+
+</script>
+  {% endif %}
+<div>
+  {% if members != 0 %}
+
+
   <dl class="dl-horizontal">
     {% for member in members %}
       {% block member_block scoped %}{% endblock %}

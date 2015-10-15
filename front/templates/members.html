@@ -4,6 +4,7 @@
   <a href='/member/{{member.id}}'>{{ member.nom }} {{ member.prenom }}</a>
 </dt>
 <dd>
+  {{ member.fonction }}
   {% for formation in formations[member.id] %}
       <big><span class='btn btn-warning btn-xs' style='display: inline-block'> {{ formation.name|lower }} </span></big>
   {% endfor %}

@@ -115,6 +115,9 @@ class SGDFIntranetSpider(scrapy.Spider):
             member = Member(id=int(member_id),
                             structure=int(value(member_selector.xpath('td')[4])),
                             fonction=value(member_selector.xpath('td')[6]),
+                            inscription_starts=value(member_selector.xpath('td')[40]),
+                            inscription_ends=value(member_selector.xpath('td')[41]),
+                            inscription_type=int(value(member_selector.xpath('td')[42])),
             )
 
             for i in [1]:
