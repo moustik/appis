@@ -19,6 +19,9 @@ def clean_field_name(field_name):
 def value(selector):
     return selector.xpath('text()')[0].extract() if len(selector.xpath('text()')) else None
 
+def int_value(selector):
+    return int(selector.xpath('text()')[0].extract()) if len(selector.xpath('text()')) else -1
+
 class SGDFIntranetSpider(scrapy.Spider):
     name = "intranet"
     start_urls = [INTRANET_URL]
@@ -113,11 +116,13 @@ class SGDFIntranetSpider(scrapy.Spider):
             self.logger.warning("extracting %s" % member_id)
 
             member = Member(id=int(member_id),
-                            structure=int(value(member_selector.xpath('td')[4])),
+                            nom=value(member_selector.xpath('td')[2]),
+                            prenom=value(member_selector.xpath('td')[3]),
+                            structure=int_value(member_selector.xpath('td')[4]),
                             fonction=value(member_selector.xpath('td')[6]),
                             inscription_starts=value(member_selector.xpath('td')[40]),
                             inscription_ends=value(member_selector.xpath('td')[41]),
-                            inscription_type=int(value(member_selector.xpath('td')[42])),
+                            inscription_type=int_value(member_selector.xpath('td')[42]),
             )
 
             for i in [1]:
@@ -128,14 +133,14 @@ class SGDFIntranetSpider(scrapy.Spider):
             inscription = Inscription(member_id=int(member_id),
                                       starts=value(member_selector.xpath('td')[40]),
                                       ends=value(member_selector.xpath('td')[41]),
-                                      inscription_type=int(value(member_selector.xpath('td')[42])),
+                                      inscription_type=int_value(member_selector.xpath('td')[42]),
             )
             for i in [1]:
                 yield inscription
 
             fonction = Fonction(id=value(member_selector.xpath('td')[6]),
                                 name=value(member_selector.xpath('td')[8]),
-                                category=int(value(member_selector.xpath('td')[7])),
+                                category=int_value(member_selector.xpath('td')[7]),
             )
             for i in [1]:
                 yield fonction
@@ -161,8 +166,8 @@ class SGDFIntranetSpider(scrapy.Spider):
 
 
         item = response.meta.get("member")
-        item["nom"] = full_name[0]
-        item["prenom"] = full_name[1]
+#        item["nom"] = full_name[0]
+#        item["prenom"] = full_name[1]
 
         for row_selector in response.xpath('//*[@id="ctl00_ctl00_MainContent_TabsContent_TabContainerResumeAdherent__tabResume"]/table/tr')[1:-1]: # skip header and alloc CAF
             label = row_selector.xpath('td[@class="label_fiche"]/text()')[0].extract()
@@ -275,6 +280,6 @@ class SGDFIntranetSpider(scrapy.Spider):
             structure = Structure()
             structure["id"] = int(value(row_selector.xpath('td')[0]).split(' - ')[0])
             structure["name"] = value(row_selector.xpath('td')[0]).split(' - ')[1]
-            structure["headcount"] = [ int(value(row_selector.xpath('td')[i])) for i in range(1,13) ]
+            structure["headcount"] = [ int_value(row_selector.xpath('td')[i]) for i in range(1,13) ]
             yield structure
 
