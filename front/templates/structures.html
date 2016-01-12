@@ -3,18 +3,28 @@
 
 {% for structure in structures %}
   {% if "00" in structure.id|string() %}
+    </div>
   </div>
-  <div class="list-group">
-    <a class="list-group-item active" href='/structure/{{structure.id}}'>
-      <div class="row">
-        <span class="col-xs-8 col-sm-4">{{ structure.name }}</span>
-        <span class="col-xs-4 col-sm-2"><span class="glyphicon glyphicon-user"></span> H/F {{ structure.headcount[0] }} / {{ structure.headcount[1] }}</span>
+  <div class="list-group" id="funf{{structure.id}}">
+    <div class="list-group-item active">
+      <div class="row" data-toggle="collapse" data-parent="#funf{{structure.id}}" href="#collapseOne{{structure.id}}">
+        <span class="col-xs-6 col-sm-4">
+            <a href='/overview/{{structure.id}}'><span class="glyphicon glyphicon-user"></span></a> {{ structure.name }}
+        </span>
+        <span class="col-xs-3 col-sm-2 col-md-1"><span class="glyphicon glyphicon-user"></span> <div class="clearfix visible-xs-block"></div>{{ structure.headcount[0] }} / {{ structure.headcount[1] }}</span>
+        <span class="col-xs-3 col-sm-2 col-md-1"><small><span class="glyphicon glyphicon-user"></span></small> <div class="clearfix visible-xs-block"></div>{{ structure.headcount[3] }} / {{ structure.headcount[4] }}</span>
       </div>
+    </div>
+    <div id="collapseOne{{structure.id}}" class="panel-collapse collapse out">
+      <a class="list-group-item"
+        href='/structure/{{structure.id}}'>
+         <div class="row">
+            <span class="col-xs-8 col-sm-4">Equipe</span>
+         </div>
     </a>
   {% else %}
     {% if ((structure.id // 10) % 10) == 1 %}
 <!--
-    <a class="list-group-item" href='/structure/{{structure.id}}' style="background-color: #FFE3AD">{{ structure.name }}</a>
 -->
     <a class="list-group-item list-group-item-warning"
     {% elif ((structure.id // 10) % 10) == 2 %}
@@ -28,9 +38,9 @@
     {% endif %}
         href='/structure/{{structure.id}}'>
          <div class="row">
-            <span class="col-xs-8 col-sm-4">{{ structure.name }}</span>
-            <span class="col-xs-2 col-sm-2 col-md-1"><span class="glyphicon glyphicon-user"></span> {{ structure.headcount[0] }} / {{ structure.headcount[1] }}</span>
-            <span class="col-xs-2 col-sm-2 col-md-1"><span class="glyphicon glyphicon-user"></span> {{ structure.headcount[3] }} / {{ structure.headcount[4] }}</span>
+            <span class="col-xs-6 col-sm-4">{{ structure.name }}</span>
+            <span class="col-xs-3 col-sm-2 col-md-1"><span class="glyphicon glyphicon-user"></span> <div class="clearfix visible-xs-block"></div> {{ structure.headcount[0] }} / {{ structure.headcount[1] }}</span>
+            <span class="col-xs-3 col-sm-2 col-md-1"><small><span class="glyphicon glyphicon-user"></span></small> <div class="clearfix visible-xs-block"></div> {{ structure.headcount[3] }} / {{ structure.headcount[4] }}</span>
          </div>
     </a>
   {% endif %}

@@ -25,6 +25,12 @@ PACKS = {
     4: [406951500, 406952400, 406952200],
 }
 
+MEMBER_PREPROJECTION = {"id": 1, "nom": 1, "prenom": 1,
+                        "inscription_starts": 1, "inscription_type": 1,
+                        "adresse": 1, "ville": 1, "date_de_naissance": 1,
+                        "telephones_portables": 1,
+                        "courriels": 1, "structure": 1, "fonction": 1}
+
 MEMBER_PROJECTION = {"id": "$doc.id",
                      "nom": "$doc.nom",
                      "prenom": "$doc.prenom",
@@ -48,13 +54,13 @@ def safe_get_first(cursor):
     return cursor[0] if cursor.count() else None
 
 
-@app.route('/')
+@app.route('/index')
 def home_page():
     members = mongo.db.members.find({'id': 150721942})
     members = mongo.db.members.find().sort([("nom", 1), ("prenom", 1)])
     members = mongo.db.members.aggregate(
         [
-            {"$match": { "inscription_ends": { "$regex": ".*201[5678]"}}},
+            {"$match": { "inscription_ends": { "$regex": ".*201[5678]"}, "inscription_type": 0}},
             {"$sort": { "timestamp": -1 }},
             {"$group": { "_id": "$id", "doc": { "$first": "$$ROOT" }}},
             {"$project": MEMBER_PROJECTION},
@@ -144,10 +150,9 @@ def member_page(_id=None):
                            )
 
 
+@app.route('/')
 @app.route('/structure')
 def structure_index():
-#    structures = mongo.db.structures.find({})
-#    structures.sort('id', 1)
     structures = mongo.db.structures.aggregate(
         [
             {"$sort": { "timestamp": -1 }},
@@ -161,10 +166,11 @@ def structure_index():
 
 @app.route('/structure/<structure>')
 def structure_page(structure=406950000):
-#    members = mongo.db.members.find({'structure': int(structure)}).sort([("prenom", 1), ("nom", 1)])
     members = mongo.db.members.aggregate(
         [
-            {"$match": {'structure': int(structure), "inscription_starts": { "$regex": ".*201[5678]"}}},
+            {"$match": {'structure': int(structure),
+                        "inscription_starts": { "$regex": ".*201[5678]"},
+                        "inscription_type": 0}},
             {"$sort": { "timestamp": -1 }},
             {"$group": { "_id": "$id", "doc": { "$first": "$$ROOT" }}},
             {"$project": MEMBER_PROJECTION},
@@ -180,7 +186,76 @@ def structure_page(structure=406950000):
         title = "Aucune structure trouvee"
         structure = None
 
+    formations, qualifications, diplomes, inscriptions = get_side_data(members)
 
+    return render_template('members.html', title=title,
+                           members=members,
+                           formations=formations,
+                           qualifications=qualifications,
+                           diplomes=diplomes,
+                           inscriptions=inscriptions,
+                           is_structure=True,
+    )
+
+@app.route('/overview/<structure>')
+def structure_overview_page(structure=406950000):
+    projX = MEMBER_PREPROJECTION.copy()
+    projX.update(
+        {"parent_structure":  {
+            "$subtract": [
+                {"$divide": ["$structure", 100]},
+                {"$mod": [{"$divide": ["$structure", 100]}, 1]}
+            ]
+        }
+     })
+    members = mongo.db.members.aggregate(
+        [
+            {"$project": projX},
+            {"$match": { "parent_structure": int(structure)/100,
+                        "inscription_starts": { "$regex": ".*201[5678]"},
+                        "inscription_type": 0}},
+            {"$sort": { "timestamp": -1 }},
+            {"$group": { "_id": "$id", "doc": { "$first": "$$ROOT" }}},
+            {"$project": MEMBER_PROJECTION},
+            {"$sort": { "fonction": 1, "structure": 1 }},
+        ]
+    )
+    members = members["result"]
+
+    structures = mongo.db.structures.find({'id': int(structure)/100*100})
+    if structures.count():
+        structure = structures[0] # first one actually
+        title = structure["name"]
+    else:
+        title = "Aucune structure trouvee"
+        structure = None
+
+    formations, qualifications, diplomes, inscriptions = get_side_data(members)
+
+    structures = mongo.db.structures.aggregate(
+        [
+            {"$sort": { "timestamp": -1 }},
+            {"$group": { "_id": "$id", "doc": { "$first": "$$ROOT" }}},
+            {"$project": {"id": "$doc.id", "name": "$doc.name", "headcount": "$doc.headcount"}},
+        ]
+    )
+    structures = sorted(structures["result"], key=lambda s: s["id"])
+    print(members)
+    structures = dict([(s["id"], {'name': " ".join(s["name"].split(" ")[1:]),
+                                  'headcount': s["headcount"]}) for s in structures])
+
+    return render_template('member_overview.html', title=title,
+                           members=members,
+                           formations=formations,
+                           qualifications=qualifications,
+                           diplomes=diplomes,
+                           inscriptions=inscriptions,
+                           structures=structures,
+                           is_structure=False,
+    )
+
+
+def get_side_data(members):
     # pivot on member id
     formations = mongo.db.formations.aggregate([
         {"$match": {
@@ -196,7 +271,6 @@ def structure_page(structure=406950000):
     # make it a dict
     formations = dict(map(lambda i: (i['_id'], i['formations']), formations['result']))
 
-#    members.rewind()
     # pivot on member id
     diplomes = mongo.db.diplomes.aggregate([
         {"$match": {"member_id": { "$in": map(lambda m: m['id'], members)}}},
@@ -205,7 +279,6 @@ def structure_page(structure=406950000):
     # make it a dict
     diplomes = dict(map(lambda i: (i['_id'], i['diplomes']), diplomes['result']))
 
-#    members.rewind()
     # pivot on member id
     qualifications = mongo.db.qualifications.aggregate([
         {"$match": {"member_id": { "$in": map(lambda m: m['id'], members)}}},
@@ -214,20 +287,11 @@ def structure_page(structure=406950000):
     # make it a dict
     qualifications = dict(map(lambda i: (i['_id'], i['qualifications']), qualifications['result']))
 
-#    members.rewind()
     # pivot on member id
     inscriptions = mongo.db.inscriptions.find({"member_id": { "$in": map(lambda m: m['id'], members)}})
     inscriptions = dict(map(lambda i: (i['member_id'], {"inscription_type": i["inscription_type"]}), inscriptions))
 
-#    members.rewind()
-    return render_template('members.html', title=title,
-                           members=members,
-                           formations=formations,
-                           qualifications=qualifications,
-                           diplomes=diplomes,
-                           inscriptions=inscriptions,
-                           is_structure=True,
-    )
+    return formations, qualifications, diplomes, inscriptions
 
 
 def parse_and_set_type(s):
@@ -272,8 +336,6 @@ def request(fmt, req):
     # update final request with matching members' id
     if filtered:
         final_req["id"]["$in"] = list(filtered)
-
-#    print(final_req)
 
     members = mongo.db.members.find(final_req).sort([("prenom", 1), ("nom", 1)])
 
@@ -343,12 +405,13 @@ def data_structure(structure):
 
 
 @app.route('/data/', defaults={"structure": {"$exists" : True}})
-#@app.route('/data//members', defaults={"structure": {"$exists" : True}})
 @app.route('/data/<int:structure>/members')
 def data_structure_members(structure):
     members = mongo.db.members.aggregate(
         [
-            {"$match": {'structure': structure, "inscription_starts": { "$regex": ".*201[5678]"}}},
+            {"$match": {'structure': structure,
+                        "inscription_starts": { "$regex": ".*201[5678]"},
+                        "inscription_type": 0}},
             {"$sort": { "timestamp": -1 }},
             {"$group": { "_id": "$id", "doc": { "$first": "$$ROOT" }}},
             {"$project": MEMBER_PROJECTION},
@@ -370,6 +433,7 @@ def data_birthdays():
         [
             {"$match": {
                 "inscription_starts": { "$regex": ".*201[5678]"},
+                "inscription_type": 0
                                   }},
             {"$sort": { "timestamp": -1 }},
             {"$group": { "_id": "$id", "doc": { "$first": "$$ROOT" }}},
@@ -377,7 +441,6 @@ def data_birthdays():
         ]
     )
 
-#    fmembers = filter(lambda m: is_it_birthday(m, date(2131, 4, 17)), members["result"])
     fmembers = filter(lambda m: is_it_birthday(m, date.today()), members["result"])
 
     context = flask.request.path.split("/")[1]
@@ -405,6 +468,7 @@ def data_younglings():
         [
             {"$match": {
                 "inscription_starts": { "$regex": ".*201[5678]"},
+                "inscription_type": 0
 #                "date_de_naissance": {"$gte": "ISODate('1998-01-01T00:00:00.0Z')"}
                                   }},
             {"$sort": { "timestamp": -1 }},
