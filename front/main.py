@@ -15,6 +15,8 @@ from flask import render_template
 
 
 PACKS = {
+    # Lyon Levant
+    0: [406950000],
     # Presqu'ile - USA Gandhi - 4 Chateaux - Gerland
     1: [406950600, 406951700, 406952300],
     # Sacre Coeur - Immac - Saint Nom - Nativite - Saint Eucher
@@ -23,6 +25,9 @@ PACKS = {
     3: [406950800, 406951300, 406951900, 406951400, 406952100],
     # La Guillotiere - Genas Chassieu - Bron - Saint Priest
     4: [406951500, 406952400, 406952200],
+    # autres
+    5: [406953500],
+
 }
 
 MEMBER_PREPROJECTION = {"id": 1, "nom": 1, "prenom": 1,
@@ -160,7 +165,14 @@ def structure_index():
             {"$project": {"id": "$doc.id", "name": "$doc.name", "headcount": "$doc.headcount"}},
         ]
     )
-    structures = sorted(structures["result"], key=lambda s: s["id"])
+    struct2pack = dict([ (ss/100, p) for p, k in PACKS.iteritems() for ss in k ])
+    structures = sorted(sorted(structures["result"], key=lambda s: s["id"]),
+                        key=lambda s: struct2pack[s["id"]/100])
+    def add_pack_id(s):
+        s["pack"] = struct2pack[s["id"]/100]
+        return s
+
+    structures = map(add_pack_id, structures)
     return render_template('structures.html', title="Index des structures", structures=structures)
 
 
@@ -240,7 +252,6 @@ def structure_overview_page(structure=406950000):
         ]
     )
     structures = sorted(structures["result"], key=lambda s: s["id"])
-    print(members)
     structures = dict([(s["id"], {'name': " ".join(s["name"].split(" ")[1:]),
                                   'headcount': s["headcount"]}) for s in structures])
 
