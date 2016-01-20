@@ -5,10 +5,6 @@
 </dt>
 <dd>
   {{ member.fonction }}
-  {% for formation in formations[member.id] %}
-      <big><span class='btn btn-warning btn-xs' style='display: inline-block'> {{ formation.name|lower }} </span></big>
-  {% endfor %}
-
   {% for qualification in qualifications[member.id] %}
       <big><span class='btn btn-danger btn-xs' style='display: inline-block'>
           {{ qualification.name.split()[0]|lower }}
@@ -16,6 +12,10 @@
             <span class="badge">T</span>
           {% endif %}
       </span></big>
+  {% endfor %}
+
+  {% for formation in formations[member.id] %}
+      <big><span class='btn btn-warning btn-xs' style='display: inline-block'> {{ formation.name|lower }} </span></big>
   {% endfor %}
 
   {% for diplome in diplomes[member.id] %}

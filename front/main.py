@@ -234,13 +234,11 @@ def structure_overview_page(structure=406950000):
     )
     members = members["result"]
 
-    structures = mongo.db.structures.find({'id': int(structure)/100*100})
-    if structures.count():
-        structure = structures[0] # first one actually
+    structure = mongo.db.structures.find_one({'id': int(structure)/100*100})
+    if structure:
         title = structure["name"]
     else:
         title = "Aucune structure trouvee"
-        structure = None
 
     formations, qualifications, diplomes, inscriptions = get_side_data(members)
 
@@ -503,9 +501,77 @@ def data_younglings():
         return flask.json.jsonify({"n": len(fmembers), "result": fmembers})
 
 
+from itertools import groupby
+
+@app.route('/data/packed')
+def data_packed():
+    members = mongo.db.members.aggregate(
+        [
+            {"$match": {
+                "inscription_starts": { "$regex": ".*201[5678]"},
+                "inscription_type": 0
+#                "date_de_naissance": {"$gte": "ISODate('1998-01-01T00:00:00.0Z')"}
+                                  }},
+            {"$sort": { "timestamp": -1 }},
+            {"$group": { "_id": "$id", "doc": { "$first": "$$ROOT" }}},
+            {"$project": MEMBER_PROJECTION},
+        ]
+    )
+
+    structures = mongo.db.structures.aggregate(
+        [
+            {"$sort": { "timestamp": -1 }},
+            {"$group": { "_id": "$id", "doc": { "$first": "$$ROOT" }}},
+            {"$project": {"id": "$doc.id", "name": "$doc.name"}},
+        ]
+    )
+    structures = sorted(structures["result"], key=lambda s: s["id"])
+    structures = dict([(s["id"], " ".join(s["name"].split(" ")[1:])) for s in structures])
+#    print(structures)
+
+    fmembers = sorted(members["result"], key=lambda m: m["structure"])
+
+    fmembers = groupby(fmembers, lambda m: m["structure"])
+    fmembers = [ {"structure": k, "name": 0, "children": list(map(lambda m: {"name": m["prenom"]}, s))} for (k, s) in fmembers ]
+    for s in fmembers:
+        s["name"] = len(s["children"])
+
+    fmembers = groupby(fmembers, lambda m: m["structure"]/100)
+    fmembers = [ {"structure": -1, "name": structures[int(k*100)], "children": list(s)} for (k, s) in fmembers ]
+
+    fmembers = {"structure": 0, "name": "", "children": fmembers }
+    return flask.json.jsonify({"n": len(fmembers), "result": fmembers})
+
+
 @app.route('/charts')
 def charts():
-    return render_template('charts/timeline.html')
+    return render_template('charts/sunburst.html')
+
+
+import datetime
+
+@app.route('/last')
+def last_logs():
+    # > yesterday midnight
+    starting = datetime.datetime.combine(
+        datetime.date.today() - datetime.timedelta(days=1),
+        datetime.time(0, 0))
+    last = []
+    for c in [
+            mongo.db.diplomes,
+            mongo.db.structures,
+            mongo.db.formations,
+            mongo.db.inscriptions,
+            mongo.db.members,
+            mongo.db.qualifications,
+            mongo.db.structures,
+    ]:                                     # > yesterday midnigth
+
+        last += list(c.find({"timestamp": {"$gt": starting}},
+                            {"_id": 0}))
+
+    return flask.json.jsonify({"from": starting, "result": list(last)})
+
 
 if __name__ == '__main__':
     app.run(host='127.0.0.1', port=8080, debug=True)

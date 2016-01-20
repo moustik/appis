@@ -281,5 +281,10 @@ class SGDFIntranetSpider(scrapy.Spider):
             structure["id"] = int(value(row_selector.xpath('td')[0]).split(' - ')[0])
             structure["name"] = value(row_selector.xpath('td')[0]).split(' - ')[1]
             structure["headcount"] = [ int_value(row_selector.xpath('td')[i]) for i in range(1,13) ]
+
+            #XXXdlet: fix structure vs structure leaders headcount
+            # groupe struct and no kids
+            if "GROUPE" in structure["name"] and structure["headcount"][5] == 0:
+                structure["id"] += 9
             yield structure
 

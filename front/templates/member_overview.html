@@ -1,0 +1,74 @@
+{% extends "overview_listing.html" %}
+{% block member_block %}
+
+<div class="row bg-default" style="border-bottom: 1px solid black; padding-top: 2px; padding-bottom: 2px;">
+<div class="col-md-2 col-xs-4">
+  <a href='/member/{{member.id}}'>{{ member.nom|capitalize }} {{ member.prenom|capitalize }}</a>
+</div>
+<div class="col-md-2 col-xs-4">
+  {{ member.fonction }}
+
+  {% set dir = qualifications[member.id]|selectattr("name", "equalto", "Animateur SF (CAFASF)")|list %}
+    <span class='btn
+  {% if dir|length %}
+    btn-danger
+  {% else %}
+    btn-default
+  {% endif %}
+  btn-xs' style='display: inline-block'>
+      <span class="badge"
+            {% if dir|selectattr("titular", "equalto", "Oui")|list|length == 0 %}
+              style="visibility: hidden;"
+            {% endif %}
+            >T</span>
+  </span>
+
+  {% set dir = qualifications[member.id]|selectattr("name", "equalto", "Directeur SF (CAFDSF)")|list %}
+  <span class='btn
+  {% if dir|length %}
+    btn-danger
+  {% else %}
+    btn-default
+  {% endif %}
+  btn-xs' style='display: inline-block'>
+      <span class="badge"
+            {% if dir|selectattr("titular", "equalto", "Oui")|list|length == 0 %}
+              style="visibility: hidden;"
+            {% endif %}
+            >T</span>
+  </span>
+</div>
+<div class="col-md-6 col-xs-4">
+  {% for formation in formations[member.id] %}
+      <big>
+        <span class='btn btn-warning btn-xs' style='display: inline-block'>
+<!--
+          {{ formation.name|lower }}
+-->
+          {{ formation.name|lower|replace("formation", "")|replace("generale", "")|replace("module appro", "") }}
+        </span>
+      </big>
+  {% endfor %}
+
+  {% for diplome in diplomes[member.id] %}
+      <big><span class='btn btn-primary btn-xs' style='display: inline-block'>
+          {% if "Buchettes" in diplome.name %}
+            <span class="glyphicon glyphicon-bitcoin"></span>
+            <span class="glyphicon glyphicon-bitcoin"></span>
+            {% if "3" in diplome.name %}
+            <span class="glyphicon glyphicon-bitcoin"></span>
+            {% elif "4" in diplome.name %} <span class="glyphicon glyphicon-bitcoin"></span> 
+               <span class="glyphicon glyphicon-bitcoin"></span>
+               {% endif %}
+          {% else %}
+            {{ diplome.name }}
+          {% endif %}
+      </span></big>
+  {% endfor %}
+
+      {% if member.id in inscriptions and inscriptions[member.id].inscription_type == 2 %}
+      <span class="badge">pre-inscrit</span>
+      {% endif %}
+</div>
+</div>
+{% endblock %}

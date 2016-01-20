@@ -2,26 +2,22 @@
 {% block content %}
 
 {% for structure in structures %}
-  {% if "00" in structure.id|string() %}
+  {% if structure.id % 100 == 0 %}
     </div>
   </div>
+</div>
+<div style="border: 1px solid #eee; border-left-width: 5px; border-left-color: #{{'f' if structure.pack%2 != 0  else 0}}{{'f' if (structure.pack/2)%2  >= 1 else 0}}{{'f' if structure.pack > 3 else 0}};">
   <div class="list-group" id="funf{{structure.id}}">
     <div class="list-group-item active">
       <div class="row" data-toggle="collapse" data-parent="#funf{{structure.id}}" href="#collapseOne{{structure.id}}">
-        <span class="col-xs-6 col-sm-4">
-            <a href='/overview/{{structure.id}}'><span class="glyphicon glyphicon-user"></span></a> {{ structure.name }}
+        <span class="col-xs-6 col-sm-3">
+            <a href='/overview/{{structure.id}}'><span class="glyphicon glyphicon-user"></span></a> {{ structure.name }} <span class="glyphicon glyphicon-chevron-down"></span>
         </span>
-        <span class="col-xs-3 col-sm-2 col-md-1"><span class="glyphicon glyphicon-user"></span> <div class="clearfix visible-xs-block"></div>{{ structure.headcount[0] }} / {{ structure.headcount[1] }}</span>
-        <span class="col-xs-3 col-sm-2 col-md-1"><small><span class="glyphicon glyphicon-user"></span></small> <div class="clearfix visible-xs-block"></div>{{ structure.headcount[3] }} / {{ structure.headcount[4] }}</span>
+        <span class="col-xs-3 col-sm-1 col-md-1"><span class="glyphicon glyphicon-user"></span> <div class="clearfix visible-xs-block"></div>{{ structure.headcount[0] }} / {{ structure.headcount[1] }}</span>
+        <span class="col-xs-3 col-sm-1 col-md-1"><small><span class="glyphicon glyphicon-user"></span></small> <div class="clearfix visible-xs-block"></div>{{ structure.headcount[3] }} / {{ structure.headcount[4] }}</span>
       </div>
     </div>
     <div id="collapseOne{{structure.id}}" class="panel-collapse collapse out">
-      <a class="list-group-item"
-        href='/structure/{{structure.id}}'>
-         <div class="row">
-            <span class="col-xs-8 col-sm-4">Equipe</span>
-         </div>
-    </a>
   {% else %}
     {% if ((structure.id // 10) % 10) == 1 %}
 <!--
@@ -36,11 +32,15 @@
     {% else %}
     <a class="list-group-item"
     {% endif %}
+    {% if structure.id % 10 == 9 %}
+        href='/structure/{{structure.id - 9}}'>
+    {% else %}
         href='/structure/{{structure.id}}'>
+    {% endif %}
          <div class="row">
-            <span class="col-xs-6 col-sm-4">{{ structure.name }}</span>
-            <span class="col-xs-3 col-sm-2 col-md-1"><span class="glyphicon glyphicon-user"></span> <div class="clearfix visible-xs-block"></div> {{ structure.headcount[0] }} / {{ structure.headcount[1] }}</span>
-            <span class="col-xs-3 col-sm-2 col-md-1"><small><span class="glyphicon glyphicon-user"></span></small> <div class="clearfix visible-xs-block"></div> {{ structure.headcount[3] }} / {{ structure.headcount[4] }}</span>
+            <span class="col-xs-6 col-sm-3">{{ structure.name }}</span>
+            <span class="col-xs-3 col-sm-1 col-md-1"><big><span class="glyphicon glyphicon-user"></span></big> <div class="clearfix visible-xs-block"></div> {{ structure.headcount[0] }} / {{ structure.headcount[1] }}</span>
+            <span class="col-xs-3 col-sm-1 col-md-1"><small><span class="glyphicon glyphicon-user"></span></small> <div class="clearfix visible-xs-block"></div> {{ structure.headcount[3] }} / {{ structure.headcount[4] }}</span>
          </div>
     </a>
   {% endif %}
